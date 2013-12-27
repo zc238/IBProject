@@ -21,6 +21,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import sep.pack.MarketDataRetriever;
+import sep.pack.OrderPlacer;
+
 import apidemo.util.HtmlButton;
 import apidemo.util.NewLookAndFeel;
 import apidemo.util.NewTabbedPanel;
@@ -58,16 +60,22 @@ public class ApiDemo implements IConnectionHandler {
 	private final JTextArea m_msg = new JTextArea();
 
 	private final MarketDataRetriever retriever = new MarketDataRetriever( this, m_inLogger, m_outLogger);
+	private final OrderPlacer placer = new OrderPlacer( this, m_inLogger, m_outLogger);
+	
 	// getter methods
 	public ArrayList<String> accountList() 	{ return m_acctList; }
 	public ApiController controller() 		{ return m_controller; }
 	public JFrame frame() 					{ return m_frame; }
+	
 	public MarketDataRetriever myController() { return retriever; }
+	public OrderPlacer myplacer() { return placer; }
 	
 	public static void main(String[] args) {
 		INSTANCE.run();	
 		
 //		INSTANCE.myController().makeconnection();
+		
+		INSTANCE.myplacer().sendOrder();
 	}
 	
 	private void run() {
