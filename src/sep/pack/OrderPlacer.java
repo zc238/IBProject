@@ -45,39 +45,17 @@ public class OrderPlacer extends ApiController{
 		return new NewOrder(order);
 	}
 	
-	// send order (see placeOrModifyOrder in TickDlg.java)
-	// requires three parameters: 1.contract; 2.order; 3.IOrderHandler
+	// send order (see placeOrder in ApiConnection.java)
+	// requires three parameters: 1.contract; 2.order
 	public void sendOrder(){
-		// construct ApiController in order to call placeOrModifyOrder
+		// construct ApiController in order to call placeOrder
 		ApiController controller = new ApiController(handler, inLogger, outLogger);
 		
-		// construct IOrderHandler
-		public void IOrderHandler(){
-			@Override public void orderState(NewOrderState orderState) {
-				controller().removeOrderHandler( this);
-				SwingUtilities.invokeLater( new Runnable() {
-					@Override public void run() {
-						dispose();
-					}
-				});
-			}
-			@Override public void handle(int errorCode, final String errorMsg) {
-				order.orderId( 0);
-				SwingUtilities.invokeLater( new Runnable() {
-					@Override public void run() {
-						JOptionPane.showMessageDialog( TicketDlg.this, errorMsg);
-					}
-				});
-			}
-		}
-		IOrderHandler orderhandler = new IOrderHandler();
-		
 		// call placeOrModifyOrder
-		controller.placeOrModifyOrder(
+		controller.placeOrder(
 				createContract("SPY").getContract(),
-				createOrder("SPY").getOrder(), // function getOrder is not defined in NewOrder.java
-				orderhandler);
-
+				createOrder("SPY").getOrder() // function getOrder is not defined in NewOrder.java
+				);
 		System.out.println("Orders Sent");
 	}
 }
