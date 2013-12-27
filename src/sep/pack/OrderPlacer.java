@@ -12,6 +12,7 @@ import com.ib.client.ComboLeg;
 import com.ib.client.Contract;
 import com.ib.client.EClientSocket;
 import com.ib.controller.ApiConnection.ILogger;
+import com.ib.controller.ApiConnection;
 import com.ib.controller.ApiController.IConnectionHandler;
 import com.ib.controller.ApiController.IOrderHandler;
 import com.ib.controller.ApiController;
@@ -45,14 +46,15 @@ public class OrderPlacer extends ApiController{
 		return new NewOrder(order);
 	}
 	
-	// send order (see placeOrder in ApiConnection.java)
-	// requires three parameters: 1.contract; 2.order
+	// send order (see placeOrder in ApiConnection.java) requiring two parameters: 1.contract; 2.order
 	public void sendOrder(){
-		// construct ApiController in order to call placeOrder
-		ApiController controller = new ApiController(handler, inLogger, outLogger);
+		// construct ApiConnection in order to call placeOrder
+		QuotesProcessor wrapper = new QuotesProcessor(handler, inLogger, outLogger);
+		ApiConnection connection = new ApiConnection(wrapper, inLogger, outLogger);
+		Order order = new Order();
 		
 		// call placeOrModifyOrder
-		controller.placeOrder(
+		connection.placeOrder(
 				createContract("SPY").getContract(),
 				createOrder("SPY").getOrder() // function getOrder is not defined in NewOrder.java
 				);
