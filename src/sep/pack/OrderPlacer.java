@@ -36,8 +36,7 @@ public class OrderPlacer extends ApiController{
 	
 	// construct a order
 	private NewOrder createNewOrder(int quantity){
-		Order order = new Order(); // construct an Order
-		NewOrder newOrder = new NewOrder(order); // use the order to construct the NewOrder
+		NewOrder newOrder = new NewOrder(); // use the order to construct the NewOrder
 		
 		//Update newOrder information
 		newOrder.account("DU168741");

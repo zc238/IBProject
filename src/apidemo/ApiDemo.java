@@ -71,7 +71,7 @@ public class ApiDemo implements IConnectionHandler {
 	public OrderPlacer myplacer() { return placer; }
 	
 	public static void main(String[] args) {
-		INSTANCE.run();	
+//		INSTANCE.run();	
 		
 //		INSTANCE.myController().makeconnection();
 		
