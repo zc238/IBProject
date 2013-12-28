@@ -4,7 +4,6 @@ import java.util.Vector;
 
 import com.ib.client.ComboLeg;
 import com.ib.client.Contract;
-import com.ib.client.Order;
 import com.ib.controller.ApiConnection;
 import com.ib.controller.ApiConnection.ILogger;
 import com.ib.controller.ApiController;
@@ -12,6 +11,7 @@ import com.ib.controller.NewContract;
 import com.ib.controller.NewOrder;
 import com.ib.controller.OrderType;
 import com.ib.controller.Types;
+import com.ib.controller.Types.Action;
 
 
 public class OrderPlacer extends ApiController{
@@ -35,12 +35,12 @@ public class OrderPlacer extends ApiController{
 	}
 	
 	// construct a order
-	private NewOrder createNewOrder(int quantity){
+	private NewOrder createNewOrder(int quantity, Action buySell){
 		NewOrder newOrder = new NewOrder(); // use the order to construct the NewOrder
 		
 		//Update newOrder information
 		newOrder.account("DU168741");
-		newOrder.action(Types.Action.BUY);					// Action Type
+		newOrder.action(buySell);					// Action Type
 		newOrder.algoStrategy(Types.AlgoStrategy.None);
 		newOrder.allOrNone(false);
 		newOrder.auxPrice(Double.MAX_VALUE);
@@ -117,7 +117,7 @@ public class OrderPlacer extends ApiController{
 		ApiConnection connection = new ApiConnection(wrapper, inLogger, outLogger);
 		
 		// call placeOrder
-		connection.placeOrder(createContract("GOOG"), createNewOrder(100));
+		connection.placeOrder(createContract("GOOG"), createNewOrder(100, Types.Action.BUY));
 		
 		System.out.println("Orders Sent");
 	}
