@@ -2,36 +2,17 @@ package sep.pack;
 
 import java.util.Vector;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
-import apidemo.ApiDemo;
-import apidemo.TicketDlg;
-
 import com.ib.client.ComboLeg;
 import com.ib.client.Contract;
-import com.ib.client.EClientSocket;
 import com.ib.client.Order;
-import com.ib.controller.ApiConnection.ILogger;
 import com.ib.controller.ApiConnection;
-import com.ib.controller.ApiController.IConnectionHandler;
-import com.ib.controller.ApiController.IOrderHandler;
-import com.ib.controller.Types;
-import com.ib.controller.Types.Action;
-import com.ib.controller.Types.AlgoStrategy;
-import com.ib.controller.Types.HedgeType;
-import com.ib.controller.Types.Method;
-import com.ib.controller.Types.OcaType;
-import com.ib.controller.Types.ReferencePriceType;
-import com.ib.controller.Types.Rule80A;
-import com.ib.controller.Types.TimeInForce;
-import com.ib.controller.Types.TriggerMethod;
-import com.ib.controller.Types.VolatilityType;
+import com.ib.controller.ApiConnection.ILogger;
 import com.ib.controller.ApiController;
 import com.ib.controller.NewContract;
 import com.ib.controller.NewOrder;
-import com.ib.controller.NewOrderState;
 import com.ib.controller.OrderType;
+import com.ib.controller.Types;
+
 
 public class OrderPlacer extends ApiController{
 	private IConnectionHandler handler;
