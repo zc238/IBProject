@@ -13,8 +13,8 @@ public class MarketDataRetriever extends ApiController{
 	private IConnectionHandler handler;
 	private ILogger inLogger;
 	private ILogger outLogger;
-	public MarketDataRetriever(IConnectionHandler handler, ILogger inLogger,
-			ILogger outLogger) {
+	
+	public MarketDataRetriever(IConnectionHandler handler, ILogger inLogger, ILogger outLogger) {
 		super(handler, inLogger, outLogger);
 		this.inLogger = inLogger;
 		this.outLogger = outLogger;

@@ -6,9 +6,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class QuotesLogger {
 	private ConcurrentHashMap<Integer, Quotes> latestNbbo = new ConcurrentHashMap<Integer, Quotes>();
 	private Vector<Quotes> storedData = new Vector<Quotes>();
+	
 	public Vector<Quotes> getStoredData() {
 		return storedData;
 	}
+	
 	public void updateLatestNbbo(int reqId, Quotes q){
 		latestNbbo.put(reqId, q);
 	}

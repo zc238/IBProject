@@ -40,11 +40,9 @@ import com.ib.controller.ApiController.ITimeHandler;
 import com.ib.controller.Formats;
 import com.ib.controller.Types.NewsType;
 
-// make connection
-
-public class main implements IConnectionHandler {
+public class strategy implements IConnectionHandler {
 	static { NewLookAndFeel.register(); }
-	static main INSTANCE = new main();
+	static strategy INSTANCE = new strategy();
 
 	private final MarketDataRetriever retriever = new MarketDataRetriever( this, m_inLogger, m_outLogger);
 

@@ -13,8 +13,7 @@ public class QuotesProcessor extends ApiController{
 	private QuotesLogger records = new QuotesLogger();
 	private AtomicInteger counter = new AtomicInteger(0);
 	
-	public QuotesProcessor(IConnectionHandler handler, ILogger inLogger,
-			ILogger outLogger) {
+	public QuotesProcessor(IConnectionHandler handler, ILogger inLogger, ILogger outLogger) {
 		super(handler, inLogger, outLogger);
 	}
 	

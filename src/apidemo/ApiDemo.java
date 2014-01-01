@@ -9,6 +9,7 @@ import java.awt.Rectangle;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Vector;
 
 import javax.swing.Box;
 import javax.swing.JFrame;
@@ -22,14 +23,17 @@ import javax.swing.border.EmptyBorder;
 
 import sep.pack.MarketDataRetriever;
 import sep.pack.OrderPlacer;
-
 import apidemo.util.HtmlButton;
 import apidemo.util.NewLookAndFeel;
 import apidemo.util.NewTabbedPanel;
 import apidemo.util.VerticalPanel;
 
+import com.ib.client.ComboLeg;
+import com.ib.client.Contract;
 import com.ib.controller.ApiConnection.ILogger;
 import com.ib.controller.ApiController;
+import com.ib.controller.NewOrder;
+import com.ib.controller.Types;
 import com.ib.controller.ApiController.IBulletinHandler;
 import com.ib.controller.ApiController.IConnectionHandler;
 import com.ib.controller.ApiController.ITimeHandler;
@@ -68,14 +72,13 @@ public class ApiDemo implements IConnectionHandler {
 	public JFrame frame() 					{ return m_frame; }
 	
 	public MarketDataRetriever myController() { return retriever; }
-	public OrderPlacer myplacer() { return placer; }
+	public OrderPlacer myPlacer() { return placer; }
 	
 	public static void main(String[] args) {
-//		INSTANCE.run();	
+		INSTANCE.run();	
 		
-//		INSTANCE.myController().makeconnection();
-		
-		INSTANCE.myplacer().sendOrder();
+		//INSTANCE.myController().makeconnection();
+		INSTANCE.myPlacer().sendOrder();
 	}
 	
 	private void run() {

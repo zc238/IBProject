@@ -37,7 +37,7 @@ public class ApiConnection extends EClientSocket {
 	private final ILogger m_outLogger;
 
 	public ApiConnection(AnyWrapper wrapper, ILogger inLogger, ILogger outLogger) {
-		super( wrapper);
+		super(wrapper);
 		m_inLogger = inLogger;
 		m_outLogger = outLogger;
 	}
