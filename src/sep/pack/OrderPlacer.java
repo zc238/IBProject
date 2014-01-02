@@ -2,18 +2,14 @@ package sep.pack;
 
 import java.util.Vector;
 
-import com.ib.client.AnyWrapper;
 import com.ib.client.ComboLeg;
 import com.ib.client.Contract;
 import com.ib.client.EClientSocket;
 import com.ib.controller.ApiConnection;
 import com.ib.controller.ApiConnection.ILogger;
-import com.ib.controller.ApiController.IConnectionHandler;
 import com.ib.controller.ApiController;
 import com.ib.controller.NewContract;
 import com.ib.controller.NewOrder;
-import com.ib.controller.OrderType;
-import com.ib.controller.Types;
 import com.ib.controller.Types.Action;
 
 
@@ -49,13 +45,14 @@ public class OrderPlacer extends ApiController{
 	}
 	
 	// send order (see placeOrder in ApiConnection.java) requiring two parameters: 1.contract; 2.order
-	public void sendOrder(){
-		OrderProcessor wrapper = new OrderProcessor(handler, inLogger, outLogger);
+	public void sendOrder(String ticker, int amt, Action action){
+		OrderProcessor wrapper = new OrderProcessor(handler, inLogger, outLogger);		
 		ApiConnection connection = new ApiConnection(wrapper, inLogger, outLogger);
-		NewContract contract = createContract("IBM");
-		NewOrder order = createNewOrder(100, Types.Action.BUY);
+		connection.eConnect("127.0.0.1",7496,0);
+		NewContract contract = createContract(ticker);
+		NewOrder order = createNewOrder(amt, action);
 		connection.placeOrder(contract, order);
-	
+
 		System.out.println("Orders Sent");
 	}
 }
