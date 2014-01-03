@@ -61,6 +61,6 @@ public class Quotes{
 	}
 	
 	public String toString(){
-		return localTimeStamp.toString() + "," + reqId + "," + ask + "," + askSize + "," + bid + "," + bidSize + "\n";
+		return "<Quotes: " + localTimeStamp.toString() + "," + reqId + "," + ask + "," + askSize + "," + bid + "," + bidSize + ">\n";
 	}
 }

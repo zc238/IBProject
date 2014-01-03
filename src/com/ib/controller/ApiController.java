@@ -706,6 +706,10 @@ public class ApiController implements EWrapper {
 		void handle(int orderId, int errorCode, String errorMsg);  // add permId?
 	}
 
+	public void reqOrders(){
+		m_client.reqAllOpenOrders();
+	}
+	
 	public void reqLiveOrders( ILiveOrderHandler handler) {
 		m_liveOrderHandlers.add( handler);
 		m_client.reqAllOpenOrders();

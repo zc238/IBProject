@@ -1,31 +1,25 @@
 package sep.pack;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ib.client.ComboLeg;
 import com.ib.client.Contract;
-import com.ib.client.EClientSocket;
 import com.ib.controller.ApiConnection;
-import com.ib.controller.ApiConnection.ILogger;
-import com.ib.controller.ApiController;
 import com.ib.controller.NewContract;
 import com.ib.controller.NewOrder;
+import com.ib.controller.OrderType;
 import com.ib.controller.Types.Action;
 
 
-public class OrderPlacer extends ApiController{
-	private IConnectionHandler handler;
-	private ILogger inLogger;
-	private ILogger outLogger;
-	
-	public OrderPlacer(IConnectionHandler handler, ILogger inLogger,ILogger outLogger){
-		super(handler, inLogger, outLogger);
-		this.inLogger = inLogger;
-		this.outLogger = outLogger;
-		this.handler = handler;
-	}
-	
+public class OrderPlacer{
 	// construct a contract
+	public static String acct = ""; //"DU168728"
+	public static AtomicInteger orderID = new AtomicInteger(0);
+	
 	private NewContract createContract(String ticker){
 		Vector<ComboLeg> cblg = new Vector<ComboLeg>();
 		Contract contract = new Contract(0, ticker, "STK", "", 0.0, "", "",
@@ -33,26 +27,32 @@ public class OrderPlacer extends ApiController{
 		return new NewContract(contract);
 	}
 	
-	// construct a order
 	private NewOrder createNewOrder(int quantity, Action buySell){
+		return createNewOrder(quantity, buySell, false, 1);
+	}
+	
+	// construct a order
+	private NewOrder createNewOrder(int quantity, Action buySell, boolean isMarket, double limitPrice){
 		NewOrder order = new NewOrder();
-		order.account("DU168741");
+		order.account(OrderPlacer.acct);
 		order.action(buySell);
+		if (isMarket){
+			order.orderType(OrderType.MKT);
+		}else{
+			order.orderType(OrderType.LMT);
+		}
 		order.totalQuantity(quantity);
-		order.lmtPrice(1);
-		order.orderId(2);
+		order.lmtPrice(limitPrice);
+		order.orderId(OrderPlacer.orderID.incrementAndGet());
 		return order;
 	}
 	
-	// send order (see placeOrder in ApiConnection.java) requiring two parameters: 1.contract; 2.order
-	public void sendOrder(String ticker, int amt, Action action){
-		OrderProcessor wrapper = new OrderProcessor(handler, inLogger, outLogger);		
-		ApiConnection connection = new ApiConnection(wrapper, inLogger, outLogger);
-		connection.eConnect("127.0.0.1",7496,0);
+	public void sendOrder(ApiConnection connection, String ticker, int quantity, Action action){
+		System.out.println("Placing Order for Order ID: " + (OrderPlacer.orderID.get() + 1));
+		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
 		NewContract contract = createContract(ticker);
-		NewOrder order = createNewOrder(amt, action);
+		NewOrder order = createNewOrder(quantity, action);
 		connection.placeOrder(contract, order);
-
 		System.out.println("Orders Sent");
 	}
 }
