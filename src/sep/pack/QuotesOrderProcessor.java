@@ -102,8 +102,7 @@ public class QuotesOrderProcessor extends ApiController{
 
 
 	public void openOrderEnd() {
-		System.out.println("Releasing Lock");
-//		controller.getLock().release();
+		System.out.println("End of receiving Order Info");
 	}
 	
 	public void orderStatus(int orderId, OrderStatus status, int filled, int remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
