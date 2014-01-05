@@ -20,7 +20,7 @@ public class TradeStrategy{
 			position.put(ticker, amount);
 		}
 		else {
-			position.put(ticker, position.get(ticker)+amount);				
+			position.put(ticker, position.get(ticker) + amount);				
 		}
 	}
 	
@@ -31,7 +31,13 @@ public class TradeStrategy{
 		double orderImba2 = quote2.getBidSize() / (quote2.getBidSize() + quote2.getAskSize());
 		
 		double priceDiff = quote1.getAsk() - quote2.getAsk();
-				
+		
+		if (position.containsKey(ticker1) && position.containsKey(ticker2)){
+			if ((position.get(ticker1) != 0) && (position.get(ticker2) != 0)) {
+				return;
+			}
+		}
+		
 		if ((priceDiff < 0) && (orderImba1 > 0.1) && (orderImba2 < 0.9)){
 			quantity.addElement(100);
 			quantity.addElement(100);
