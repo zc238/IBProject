@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ib.client.Contract;
@@ -46,14 +47,17 @@ public class QuotesOrderProcessor extends ApiController{
 	@Override public void tickSize(int reqId, int tickType, int size) {
 		//0-bidS, 3-askS, 5-lastS, 8-Volume
 		if (tickType != 0 && tickType != 3){ return; }
-		Quotes lastNbbo = records.getLatestNbbo(reqId);
+		Quotes lastNbbo = records.getLatestNbbo(QuotesOrderController.REQ_TO_TICKER.get(reqId));
 		switch(tickType){
 			case 0: lastNbbo.setBidSize(size);; break;
 			case 3: lastNbbo.setAskSize(size); break;
 		}
-		records.updateLatestNbbo(reqId, lastNbbo);
+		records.updateLatestNbbo(QuotesOrderController.REQ_TO_TICKER.get(reqId), lastNbbo);
 		records.getStoredData().add(lastNbbo);
 		counter.addAndGet(1);
+		try{
+			writeNbboToFile();
+		}catch(IOException ex){}
 		displayTimeNQuote(lastNbbo);
 	}
 
@@ -64,20 +68,23 @@ public class QuotesOrderProcessor extends ApiController{
 	@Override public void tickPrice(int reqId, int tickType, double price, int canAutoExecute) {
 		//1-bid, 2-ask, 4-last, 6-high, 7-low, 9-close
 		if (tickType != 1 && tickType != 2){ return; }
-		Quotes lastNbbo = records.getLatestNbbo(reqId);
+		Quotes lastNbbo = records.getLatestNbbo(QuotesOrderController.REQ_TO_TICKER.get(reqId));
 		switch(tickType){
 			case 1: lastNbbo.setBid(price); break;
 			case 2: lastNbbo.setAsk(price); break;
 		}
-		records.updateLatestNbbo(reqId, lastNbbo);
+		records.updateLatestNbbo(QuotesOrderController.REQ_TO_TICKER.get(reqId), lastNbbo);
 		records.getStoredData().add(lastNbbo);
 		//dataHolder.add(reqId + "," + tickType + "," + price + "\n");	
 		counter.addAndGet(1);
-		if (counter.get() > 10000){
-			try{
-				writeQuotes();
-			}catch(IOException ex){}
-		}
+		try{
+			writeNbboToFile();
+		}catch(IOException ex){}
+//		if (counter.get() > 10000){
+//			try{
+//				writeQuotes();
+//			}catch(IOException ex){}
+//		}
 		displayTimeNQuote(lastNbbo);
 	}
 	
@@ -111,6 +118,19 @@ public class QuotesOrderProcessor extends ApiController{
 	
 	public void handle(int orderId, int errorCode, String errorMsg) {
 		System.out.println("Order ID: " + orderId + ". Error Message: " + errorMsg);
+	}
+	
+	private synchronized void writeNbboToFile() throws IOException{
+		File quotes = new File("C:/cfem2013/quotes.csv");
+		FileWriter writer = new FileWriter(quotes,true);
+		ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
+		String row = new Date().toString() + ",";
+		for (String ticker : nbboMap.keySet()){
+			row += nbboMap.get(ticker).toStringOnlyQ();
+		}
+		row += "\n";
+		writer.write(row);
+		writer.close();
 	}
 	
 	private synchronized void writeQuotes() throws IOException{

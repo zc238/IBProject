@@ -3,22 +3,26 @@ package sep.pack;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class QuotesLogger {
-	private ConcurrentHashMap<Integer, Quotes> latestNbbo = new ConcurrentHashMap<Integer, Quotes>();
+public class QuotesLogger { 
+	private ConcurrentHashMap<String, Quotes> latestNbbo = new ConcurrentHashMap<String, Quotes>();
 	private Vector<Quotes> storedData = new Vector<Quotes>();
 	
 	public Vector<Quotes> getStoredData() {
 		return storedData;
 	}
 	
-	public void updateLatestNbbo(int reqId, Quotes q){
-		latestNbbo.put(reqId, q);
+	public ConcurrentHashMap<String, Quotes> getNbboMap(){
+		return latestNbbo;
 	}
 	
-	public Quotes getLatestNbbo(int reqId){
-		if (!latestNbbo.containsKey(reqId)){
-			latestNbbo.put(reqId, new Quotes());
+	public void updateLatestNbbo(String ticker, Quotes q){
+		latestNbbo.put(ticker, q);
+	}
+	
+	public Quotes getLatestNbbo(String ticker){
+		if (!latestNbbo.containsKey(ticker)){
+			latestNbbo.put(ticker, new Quotes());
 		}
-		return latestNbbo.get(reqId);
+		return latestNbbo.get(ticker);
 	}
 }

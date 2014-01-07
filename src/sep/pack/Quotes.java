@@ -8,6 +8,7 @@ public class Quotes{
 	private double ask;
 	private int bidSize;
 	private int askSize;
+	private String ticker;
 	Date localTimeStamp;
 	private int reqId;
 	
@@ -24,17 +25,22 @@ public class Quotes{
 		return reqId;
 	}
 	
+	public String getTicker() {
+		return ticker;
+	}
+	
 	public Quotes(){
 		localTimeStamp = new Date();
 	}
 	
-	public Quotes(double b, double a, int bS, int aS, int id){
+	public Quotes(double b, double a, int bS, int aS, int id, String tick){
 		bid = b;
 		ask = a;
 		bidSize = bS;
 		askSize = aS;
 		localTimeStamp = new Date();
 		reqId = id;
+		ticker = tick;
 	}
 	
 	public double getBid() {
@@ -60,7 +66,11 @@ public class Quotes{
 		this.reqId = reqId;
 	}
 	
+	public String toStringOnlyQ(){
+		return bid + "," + ask + "," + bidSize  + "," + askSize  ;
+	}
+	
 	public String toString(){
-		return "<Quotes: " + localTimeStamp.toString() + "," + reqId + "," + ask + "," + askSize + "," + bid + "," + bidSize + ">\n";
+		return localTimeStamp.toString() + "," + ask + "," + askSize + "," + bid + "," + bidSize + ">\n";
 	}
 }

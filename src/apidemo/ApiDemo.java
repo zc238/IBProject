@@ -67,7 +67,7 @@ public class ApiDemo implements IConnectionHandler {
 	public QuotesOrderController myController() { return retriever; }
 	
 	public static void main(String[] args) {
-		//INSTANCE.run();	
+//		INSTANCE.run();	
 		
 		INSTANCE.myController().makeconnection();
 		INSTANCE.myController().sendOrder("SPY", 100, Action.BUY);
