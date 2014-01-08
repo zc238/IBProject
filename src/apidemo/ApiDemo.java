@@ -18,7 +18,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
-import sep.pack.OrderPlacer;
 import sep.pack.QuotesOrderController;
 import apidemo.util.HtmlButton;
 import apidemo.util.NewLookAndFeel;
@@ -31,7 +30,6 @@ import com.ib.controller.ApiController.IBulletinHandler;
 import com.ib.controller.ApiController.IConnectionHandler;
 import com.ib.controller.ApiController.ITimeHandler;
 import com.ib.controller.Formats;
-import com.ib.controller.Types.Action;
 import com.ib.controller.Types.NewsType;
 
 public class ApiDemo implements IConnectionHandler {
@@ -66,13 +64,13 @@ public class ApiDemo implements IConnectionHandler {
 	
 	public QuotesOrderController myController() { return retriever; }
 	
-	public static void main(String[] args) {
-//		INSTANCE.run();	
-		
-		INSTANCE.myController().makeconnection();
-		INSTANCE.myController().sendOrder("SPY", 100, Action.BUY);
-		INSTANCE.myController().reqMktData();
-	}
+//	public static void main(String[] args) {
+////		INSTANCE.run();	
+//		
+//		INSTANCE.myController().makeconnection();
+////		INSTANCE.myController().sendOrder("SPY", 100, Action.BUY);
+//		INSTANCE.myController().reqMktData();
+//	}
 	
 	private void run() {
 		m_tabbedPanel.addTab( "Connection", m_connectionPanel);

@@ -124,7 +124,7 @@ public class QuotesOrderProcessor extends ApiController{
 		File quotes = new File("C:/cfem2013/quotes.csv");
 		FileWriter writer = new FileWriter(quotes,true);
 		ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
-		String row = new Date().toString() + ",";
+		String row = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + ",";
 		for (String ticker : nbboMap.keySet()){
 			row += nbboMap.get(ticker).toStringOnlyQ();
 		}

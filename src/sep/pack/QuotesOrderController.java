@@ -3,6 +3,7 @@ package sep.pack;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
 
@@ -46,23 +47,15 @@ public class QuotesOrderController extends ApiController{
 		connection.eConnect("127.0.0.1",7496,0);
 	}
 	
-	public void reqMktData(){
+	public void reqMktData(List<String> tickers){
 		if (!connection.isConnected()){
 			makeconnection();
 		}
-		QuotesOrderController.REQ_TO_TICKER.put(1, "SPY");
-		QuotesOrderController.REQ_TO_TICKER.put(2, "SH");
-		QuotesOrderController.REQ_TO_TICKER.put(3, "SSO");
-		QuotesOrderController.REQ_TO_TICKER.put(4, "SDS");
-		QuotesOrderController.REQ_TO_TICKER.put(5, "SPX");
-		QuotesOrderController.REQ_TO_TICKER.put(6, "UPR");
-		
-		connection.reqMktData( 1, createContract("SPY").getContract(), "", false);
-		connection.reqMktData( 2, createContract("SH").getContract(), "", false);
-		connection.reqMktData( 3, createContract("SSO").getContract(), "", false);
-		connection.reqMktData( 4, createContract("SDS").getContract(), "", false);
-		connection.reqMktData( 5, createContract("SPX").getContract(), "", false);
-		connection.reqMktData( 6, createContract("UPR").getContract(), "", false);
+		for (int i=0; i<tickers.size(); ++i){
+			String ticker = tickers.get(i);
+			QuotesOrderController.REQ_TO_TICKER.put(i, ticker);
+			connection.reqMktData( i, createContract(ticker).getContract(), "", false);
+		}
 		
 		System.out.println("Quotes Request Sent");
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));

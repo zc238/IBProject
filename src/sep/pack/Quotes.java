@@ -1,5 +1,6 @@
 package sep.pack;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 
@@ -67,10 +68,11 @@ public class Quotes{
 	}
 	
 	public String toStringOnlyQ(){
-		return bid + "," + ask + "," + bidSize  + "," + askSize  ;
+		return bid + "," + ask + "," + bidSize  + "," + askSize + "," ;
 	}
 	
 	public String toString(){
-		return localTimeStamp.toString() + "," + ask + "," + askSize + "," + bid + "," + bidSize + ">\n";
+		
+		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(localTimeStamp) + "," + ask + "," + askSize + "," + bid + "," + bidSize + ">\n";
 	}
 }
