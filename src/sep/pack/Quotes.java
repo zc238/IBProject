@@ -71,6 +71,12 @@ public class Quotes{
 		return bid + "," + ask + "," + bidSize  + "," + askSize + "," ;
 	}
 	
+	public boolean hasZero(){
+		if (bid == 0 || ask == 0 && bidSize == 0 && askSize == 0){
+			return true;
+		}
+		return false;
+	}
 	public String toString(){
 		
 		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(localTimeStamp) + "," + ask + "," + askSize + "," + bid + "," + bidSize + ">\n";
