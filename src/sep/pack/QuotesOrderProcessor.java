@@ -127,8 +127,12 @@ public class QuotesOrderProcessor extends ApiController{
 	private synchronized void writeNbboToFile(String ticker) throws IOException{
 		long t = new Date(Calendar.getInstance().get(Calendar.YEAR), 
 						  Calendar.getInstance().get(Calendar.MONTH), 
-						  Calendar.getInstance().get(Calendar.DATE), 16, 35).getTime();
-		if (new Date().getTime() < t ){ //if we are within market open
+						  Calendar.getInstance().get(Calendar.DATE), 16, 05).getTime();
+		long t2 = new Date(Calendar.getInstance().get(Calendar.YEAR), 
+						   Calendar.getInstance().get(Calendar.MONTH), 
+						   Calendar.getInstance().get(Calendar.DATE), 9, 27).getTime();
+		long tNow = new Date().getTime();
+		if (tNow < t && tNow > t2){ //if we are within market open
 			String fileName = "C:/Users/demon4000/Dropbox/data/" 
 							+ ticker + "_"
 							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
