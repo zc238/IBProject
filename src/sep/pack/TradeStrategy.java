@@ -24,14 +24,52 @@ public class TradeStrategy{
 		}
 	}
 	
-	public void updatePair(String ticker1, String ticker2, ConcurrentHashMap<String, Quotes> latestNbbo, String pairType){
+	public double tCost(String ticker, double orderImba){
+		double TC = 0;
+		if (ticker == "SPY"){
+			TC = orderImba;
+		} else if (ticker == "SH"){
+			TC = orderImba;
+		} else if (ticker == "SSO"){
+			TC = orderImba;
+		} else if (ticker == "SDS"){
+			TC = orderImba;
+		} else if (ticker == "UPR"){
+			TC = orderImba;
+		} else if (ticker == "SPX"){
+			TC = orderImba;
+		}	
+		return TC;
+	}
+	
+	public double expectedProfit(String ticker1, String ticker2, double residual){
+		double expProfit = 0;
+		if (ticker1 == "SPY"){
+			if (ticker2 == "SH"){
+				expProfit = residual;
+			}
+		}
+		return expProfit;
+	}
+	
+	
+	public void updatePair(String ticker1, String ticker2, ConcurrentHashMap<String, Quotes> latestNbbo, 
+			double slope, int tradeSize, int windowSize, HashMap<String, Integer> position){
+		double threshold = 0;
 		Quotes quote1 = latestNbbo.get(ticker1);
 		Quotes quote2 = latestNbbo.get(ticker2);
 		double orderImba1 = quote1.getBidSize() / (quote1.getBidSize() + quote1.getAskSize());
 		double orderImba2 = quote2.getBidSize() / (quote2.getBidSize() + quote2.getAskSize());
+		double tradePrice1 =(quote1.getBidSize() + quote1.getAskSize()) / 2;
+		double tradePrice2 =(quote2.getBidSize() + quote2.getAskSize()) / 2;
 		
-		double priceDiff = quote1.getAsk() - quote2.getAsk();
+		double scaling = tradePrice1 / tradePrice2; // mean(tradePrice1)/mean(tradePrice2);
 		
+		double tradeSize1 = tradeSize;
+		double tradeSize2 = tradeSize * scaling * Math.abs(slope);
+		
+		double residual = tradePrice1 - slope * tradePrice2;
+				
 		if (position.containsKey(ticker1) && position.containsKey(ticker2)){
 			if ((position.get(ticker1) != 0) && (position.get(ticker2) != 0)) {
 				return;
