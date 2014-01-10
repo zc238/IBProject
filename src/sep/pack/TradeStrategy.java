@@ -10,34 +10,40 @@ import com.ib.controller.Types.Action;
 public class TradeStrategy{
 	private HashMap<String, Integer> position = new HashMap<String, Integer>();
 
-	private Vector<Integer> quantity = new Vector<Integer>();
-	private Vector<Action> buySell = new Vector<Action>();
-	private Vector<Boolean> isMarket = new Vector<Boolean>();
-	private Vector<Double> limitPrice = new Vector<Double>();
+	private double quantity1;
+	private double quantity2;
+	private boolean isMarket1;
+	private boolean isMarket2;
+	private double limitPrice1;
+	private double limitPrice2;
+
+	public void initialPosition(String ticker){
+		position.put(ticker, 0);
+	}
 	
 	public void updatePosition(String ticker, int amount){
-		if (!position.containsKey(ticker)){
-			position.put(ticker, amount);
-		}
-		else {
-			position.put(ticker, position.get(ticker) + amount);				
-		}
+		position.put(ticker, position.get(ticker) + amount);
 	}
 	
 	public double tCost(String ticker, double orderImba){
 		double TC = 0;
 		if (ticker == "SPY"){
-			TC = orderImba;
-		} else if (ticker == "SH"){
-			TC = orderImba;
-		} else if (ticker == "SSO"){
-			TC = orderImba;
-		} else if (ticker == "SDS"){
-			TC = orderImba;
-		} else if (ticker == "UPR"){
-			TC = orderImba;
-		} else if (ticker == "SPX"){
-			TC = orderImba;
+			TC = 0; // a function of orderImba
+		}
+		else if (ticker == "SH"){
+			TC = 0;
+		}
+		else if (ticker == "SSO"){
+			TC = 0;
+		}
+		else if (ticker == "SDS"){
+			TC = 0;
+		}
+		else if (ticker == "UPR"){
+			TC = 0;
+		}
+		else if (ticker == "SPX"){
+			TC = 0;
 		}	
 		return TC;
 	}
@@ -46,15 +52,15 @@ public class TradeStrategy{
 		double expProfit = 0;
 		if (ticker1 == "SPY"){
 			if (ticker2 == "SH"){
-				expProfit = residual;
+				expProfit = 0; // a function of residual
 			}
 		}
 		return expProfit;
 	}
 	
-	
 	public void updatePair(String ticker1, String ticker2, ConcurrentHashMap<String, Quotes> latestNbbo, 
-			double slope, int tradeSize, int windowSize, HashMap<String, Integer> position){
+			double slope, int tradeSize, int windowSize, HashMap<String, Integer> position, HashMap<String, HistQuotes> histQuotes){
+		
 		double threshold = 0;
 		Quotes quote1 = latestNbbo.get(ticker1);
 		Quotes quote2 = latestNbbo.get(ticker2);
@@ -63,60 +69,111 @@ public class TradeStrategy{
 		double tradePrice1 =(quote1.getBidSize() + quote1.getAskSize()) / 2;
 		double tradePrice2 =(quote2.getBidSize() + quote2.getAskSize()) / 2;
 		
-		double scaling = tradePrice1 / tradePrice2; // mean(tradePrice1)/mean(tradePrice2);
+		double scaling = 1; // mean(histQuotes.get(ticker1)/mean(histQuotes.get(ticker2);
 		
 		double tradeSize1 = tradeSize;
 		double tradeSize2 = tradeSize * scaling * Math.abs(slope);
 		
-		double residual = tradePrice1 - slope * tradePrice2;
-				
-		if (position.containsKey(ticker1) && position.containsKey(ticker2)){
-			if ((position.get(ticker1) != 0) && (position.get(ticker2) != 0)) {
-				return;
+		double alpha = 1 - 1 / windowSize;
+		double mean1 = 0; // mean(histQuotes.get(ticker1);
+		double mean2 = 0; // mean(histQuotes.get(ticker2);
+		double residual = 0;
+		
+		mean1 = alpha * mean1 + (1 - alpha) * tradePrice1;
+		mean1 = alpha * mean1 + (1 - alpha) * tradePrice1;
+
+		if (slope < 0){ // small residual: buy both; large residual: sell both;
+			// no position
+			if ((position.get(ticker1) == 0) && (position.get(ticker2) == 0)){
+				if (expectedProfit(ticker1, ticker2, residual) > threshold 
+						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
+					// buy both at ask
+					quantity1 = tradeSize1;
+					quantity2 = tradeSize2;
+					isMarket1 = true;
+					isMarket2 = true;
+				}
+				else if (-expectedProfit(ticker1, ticker2, residual) > threshold 
+						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
+					// sell both at bid
+					quantity1 = -tradeSize1;
+					quantity2 = -tradeSize2;
+					isMarket1 = true;
+					isMarket2 = true;					
+				}
+			}
+			// long position, short only
+			else if ((position.get(ticker1) > 0) && (position.get(ticker2) > 0)){
+				if (-expectedProfit(ticker1, ticker2, residual) > threshold 
+						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
+					// sell at both bid
+					quantity1 = -tradeSize1;
+					quantity2 = -tradeSize2;
+					isMarket1 = true;
+					isMarket2 = true;					
+				}		
+			}
+			// short position, long only
+			else if ((position.get(ticker1) < 0) && (position.get(ticker2) < 0)){
+				if (expectedProfit(ticker1, ticker2, residual) > threshold 
+						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
+					// buy at both ask
+					quantity1 = 100;
+					quantity2 = 100;
+					isMarket1 = true;
+					isMarket2 = true;
+				}
 			}
 		}
-		
-		if ((priceDiff < 0) && (orderImba1 > 0.1) && (orderImba2 < 0.9)){
-			quantity.addElement(100);
-			quantity.addElement(100);
-			isMarket.addElement(false);
-			isMarket.addElement(false);			
-			if (pairType == "irreverse"){
-				buySell.addElement(Types.Action.BUY);
-				buySell.addElement(Types.Action.SELL);
-				limitPrice.addElement(quote1.getBid());
-				limitPrice.addElement(quote2.getAsk());
-				updatePosition(ticker1,100);
-				updatePosition(ticker2,-100);				
-				
-			} else if (pairType == "reverse") {
-				buySell.addElement(Types.Action.BUY);
-				buySell.addElement(Types.Action.BUY);
-				limitPrice.addElement(quote1.getBid());
-				limitPrice.addElement(quote2.getBid());
-				updatePosition(ticker1,100);
-				updatePosition(ticker2,100);
+		else if (slope > 0){ // small residual: buy ticker1 and sell ticker2; large residual: sell ticker1 and buy ticker2;
+			// no position
+			if ((position.get(ticker1) == 0) && (position.get(ticker2) == 0)){
+				if (expectedProfit(ticker1, ticker2, residual) > threshold 
+						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
+					// buy ticker1 at ask; sell ticker2 at bid
+					quantity1 = tradeSize1;
+					quantity2 = -tradeSize2;
+					isMarket1 = true;
+					isMarket2 = true;
+				}
+				else if (-expectedProfit(ticker1, ticker2, residual) > threshold 
+						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
+					// sell ticker1 at bid; buy ticker2 at ask
+					quantity1 = -tradeSize1;
+					quantity2 = tradeSize2;
+					isMarket1 = true;
+					isMarket2 = true;					
+				}
 			}
-		} else if ((priceDiff > 0) && (orderImba1 < 0.9) && (orderImba2 > 0.1)){
-			quantity.addElement(100);
-			quantity.addElement(100);
-			isMarket.addElement(false);
-			isMarket.addElement(false);			
-			if (pairType == "irreverse"){
-				buySell.addElement(Types.Action.SELL);
-				buySell.addElement(Types.Action.BUY);
-				limitPrice.addElement(quote1.getAsk());
-				limitPrice.addElement(quote2.getBid());
-				updatePosition(ticker1,-100);
-				updatePosition(ticker2,100);				
-				
-			} else if (pairType == "reverse") {
-				buySell.addElement(Types.Action.SELL);
-				buySell.addElement(Types.Action.SELL);
-				limitPrice.addElement(quote1.getAsk());
-				limitPrice.addElement(quote2.getAsk());
-				updatePosition(ticker1,-100);
-				updatePosition(ticker2,-100);
+			// ticker1 long position, sell ticker1 and buy ticker2 only
+			else if ((position.get(ticker1) > 0) && (position.get(ticker2) < 0)){
+				if (-expectedProfit(ticker1, ticker2, residual) > threshold 
+						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
+					// sell ticker1 at bid; buy ticker2 at ask
+					quantity1 = -tradeSize1;
+					quantity2 = tradeSize2;
+					isMarket1 = true;
+					isMarket2 = true;
+				}		
+			}
+			// ticker1 short position, buy ticker1 and sell ticker2 only
+			else if ((position.get(ticker1) < 0) && (position.get(ticker2) < 0)){
+				if (expectedProfit(ticker1, ticker2, residual) > threshold 
+						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
+					// buy ticker1 at ask; sell ticker2 at bid
+					quantity1 = tradeSize1;
+					quantity2 = -tradeSize2;
+					isMarket1 = true;
+					isMarket2 = true;
+				}
 			}
 		}
 	}

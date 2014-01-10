@@ -133,7 +133,7 @@ public class QuotesOrderProcessor extends ApiController{
 						   Calendar.getInstance().get(Calendar.DATE), 9, 27).getTime();
 		long tNow = new Date().getTime();
 		if (tNow < t && tNow > t2){ //if we are within market open
-			String fileName = "C:/Users/demon4000/Dropbox/data/" 
+			String fileName = "C:/Users/Long Wang/Dropbox/data/" 
 							+ ticker + "_"
 							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
 							+ ".csv";

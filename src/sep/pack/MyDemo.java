@@ -58,7 +58,7 @@ public class MyDemo {
 		retriever.makeconnection();
 		
 		@SuppressWarnings("serial")
-		List<String> tickers = new LinkedList<String>(){{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPX"); add("UPR");}};
+		List<String> tickers = new LinkedList<String>(){{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRO");}};
 
 		retriever.reqMktData(tickers);
 		//retriever.sendOrder("SPY", 100, Action.BUY);
