@@ -51,7 +51,7 @@ public class MyDemo {
 		}
 	}
 	public static void main(String[] args) {
-
+		
 		MyLogger m_inLogger = new MyLogger();
 		MyLogger m_outLogger = new MyLogger();
 

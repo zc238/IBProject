@@ -1,21 +1,17 @@
 package sep.pack;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import cern.colt.list.DoubleArrayList;
 import cern.jet.stat.Descriptive;
 
+import com.ib.controller.Types.Action;
+
 public class TradeStrategy{
 	private HashMap<String, Integer> position = new HashMap<String, Integer>();
-
-	private double quantity1;
-	private double quantity2;
-	private boolean isMarket1;
-	private boolean isMarket2;
-	private double limitPrice1;
-	private double limitPrice2;
 
 	public void initialPosition(String ticker){
 		position.put(ticker, 0);
@@ -66,9 +62,14 @@ public class TradeStrategy{
 		return l;
 	}
 	
-	public void updatePair(String ticker1, String ticker2, ConcurrentHashMap<String, Quotes> latestNbbo, 
-			double slope, int tradeSize, int windowSize, HashMap<String, Integer> position, HashMap<String, List<Quotes>> histQuotes){
-		
+	public List<OrderContractContainer> getOrdersFromHistQuotes(String ticker1, 
+																  String ticker2, 
+																  ConcurrentHashMap<String, Quotes> latestNbbo, 
+																  double slope, 
+																  int tradeSize, 
+																  int windowSize, 
+																  HashMap<String, Integer> position, 
+																  HashMap<String, List<Quotes>> histQuotes){
 		double threshold = 0;
 		Quotes quote1 = latestNbbo.get(ticker1);
 		Quotes quote2 = latestNbbo.get(ticker2);
@@ -86,14 +87,17 @@ public class TradeStrategy{
 		
 		double scaling = mean1 / mean2;
 		
-		double tradeSize1 = tradeSize;
-		double tradeSize2 = tradeSize * scaling * Math.abs(slope);
+		int tradeSize1 = tradeSize;
+		int tradeSize2 = (int) (tradeSize * scaling * Math.abs(slope));
 		
 		double residual = 0;
 		
 		mean1 = alpha * mean1 + (1 - alpha) * tradePrice1;
 		mean2 = alpha * mean2 + (1 - alpha) * tradePrice2;
 
+		Action action1 = Action.BUY;
+		Action action2 = Action.BUY;
+		
 		if (slope < 0){ // small residual: buy both; large residual: sell both;
 			// no position
 			if ((position.get(ticker1) == 0) && (position.get(ticker2) == 0)){
@@ -101,19 +105,13 @@ public class TradeStrategy{
 						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
 					// buy both at ask
-					quantity1 = tradeSize1;
-					quantity2 = tradeSize2;
-					isMarket1 = true;
-					isMarket2 = true;
+					action1 = Action.BUY; action2 = Action.BUY;
 				}
 				else if (-expectedProfit(ticker1, ticker2, residual) > threshold 
 						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
 					// sell both at bid
-					quantity1 = -tradeSize1;
-					quantity2 = -tradeSize2;
-					isMarket1 = true;
-					isMarket2 = true;					
+					action1 = Action.SELL; action2 = Action.SELL;					
 				}
 			}
 			// long position, short only
@@ -122,10 +120,7 @@ public class TradeStrategy{
 						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
 					// sell at both bid
-					quantity1 = -tradeSize1;
-					quantity2 = -tradeSize2;
-					isMarket1 = true;
-					isMarket2 = true;					
+					action1 = Action.SELL; action2 = Action.SELL;					
 				}		
 			}
 			// short position, long only
@@ -134,10 +129,7 @@ public class TradeStrategy{
 						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
 					// buy at both ask
-					quantity1 = 100;
-					quantity2 = 100;
-					isMarket1 = true;
-					isMarket2 = true;
+					action1 = Action.BUY; action2 = Action.BUY;
 				}
 			}
 		}
@@ -148,19 +140,13 @@ public class TradeStrategy{
 						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
 					// buy ticker1 at ask; sell ticker2 at bid
-					quantity1 = tradeSize1;
-					quantity2 = -tradeSize2;
-					isMarket1 = true;
-					isMarket2 = true;
+					action1 = Action.BUY; action2 = Action.SELL;
 				}
 				else if (-expectedProfit(ticker1, ticker2, residual) > threshold 
 						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
 					// sell ticker1 at bid; buy ticker2 at ask
-					quantity1 = -tradeSize1;
-					quantity2 = tradeSize2;
-					isMarket1 = true;
-					isMarket2 = true;					
+					action1 = Action.SELL; action2 = Action.BUY;					
 				}
 			}
 			// ticker1 long position, sell ticker1 and buy ticker2 only
@@ -169,10 +155,7 @@ public class TradeStrategy{
 						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
 					// sell ticker1 at bid; buy ticker2 at ask
-					quantity1 = -tradeSize1;
-					quantity2 = tradeSize2;
-					isMarket1 = true;
-					isMarket2 = true;
+					action1 = Action.SELL; action2 = Action.BUY;
 				}		
 			}
 			// ticker1 short position, buy ticker1 and sell ticker2 only
@@ -181,12 +164,24 @@ public class TradeStrategy{
 						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
 					// buy ticker1 at ask; sell ticker2 at bid
-					quantity1 = tradeSize1;
-					quantity2 = -tradeSize2;
-					isMarket1 = true;
-					isMarket2 = true;
+					action1 = Action.BUY; action2 = Action.SELL;
 				}
 			}
-		}
+		}//end elseif
+		
+		return getOrderFromIntel(ticker1, ticker2, Math.abs(tradeSize1), Math.abs(tradeSize2), action1, action2);
+	}
+	
+	private List<OrderContractContainer> getOrderFromIntel(String ticker1, String ticker2,
+														  int size1, int size2,
+														  Action action1, Action action2){
+		List<OrderContractContainer> orders = new LinkedList<OrderContractContainer>();
+		OrderContractContainer oc1 = new OrderContractContainer(OrderUtility.createContract(ticker1), 
+																OrderUtility.createNewOrder(size1, action1));
+		orders.add(oc1);
+		OrderContractContainer oc2 = new OrderContractContainer(OrderUtility.createContract(ticker2), 
+																OrderUtility.createNewOrder(size2, action2));
+		orders.add(oc2);
+		return orders;
 	}
 }
