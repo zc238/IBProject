@@ -4,6 +4,8 @@
 package sep.pack;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -58,7 +60,7 @@ public class MyDemo {
 		retriever.makeconnection();
 		
 		@SuppressWarnings("serial")
-		List<String> tickers = new LinkedList<String>(){{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRO");}};
+		List<String> tickers = new LinkedList<String>(){{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRC");}};
 
 		retriever.reqMktData(tickers);
 		//retriever.sendOrder("SPY", 100, Action.BUY);

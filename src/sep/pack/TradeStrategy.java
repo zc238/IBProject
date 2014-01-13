@@ -1,11 +1,11 @@
 package sep.pack;
 
 import java.util.HashMap;
-import java.util.Vector;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.ib.controller.Types;
-import com.ib.controller.Types.Action;
+import cern.colt.list.DoubleArrayList;
+import cern.jet.stat.Descriptive;
 
 public class TradeStrategy{
 	private HashMap<String, Integer> position = new HashMap<String, Integer>();
@@ -58,8 +58,16 @@ public class TradeStrategy{
 		return expProfit;
 	}
 	
+	private DoubleArrayList convertQuoteToDList(List<Quotes> quotes){
+		DoubleArrayList l = new DoubleArrayList();
+		for (Quotes q : quotes){
+			l.add((q.getAsk() + q.getBid())/2);
+		}
+		return l;
+	}
+	
 	public void updatePair(String ticker1, String ticker2, ConcurrentHashMap<String, Quotes> latestNbbo, 
-			double slope, int tradeSize, int windowSize, HashMap<String, Integer> position, HashMap<String, HistQuotes> histQuotes){
+			double slope, int tradeSize, int windowSize, HashMap<String, Integer> position, HashMap<String, List<Quotes>> histQuotes){
 		
 		double threshold = 0;
 		Quotes quote1 = latestNbbo.get(ticker1);
@@ -69,18 +77,22 @@ public class TradeStrategy{
 		double tradePrice1 =(quote1.getBidSize() + quote1.getAskSize()) / 2;
 		double tradePrice2 =(quote2.getBidSize() + quote2.getAskSize()) / 2;
 		
-		double scaling = 1; // mean(histQuotes.get(ticker1)/mean(histQuotes.get(ticker2);
+		DoubleArrayList avgTick1Q = convertQuoteToDList(histQuotes.get(ticker1));
+		DoubleArrayList avgTick2Q = convertQuoteToDList(histQuotes.get(ticker2));
+		
+		double alpha = 1 - 1 / windowSize;
+		double mean1 = Descriptive.mean(avgTick1Q);
+		double mean2 = Descriptive.mean(avgTick2Q);
+		
+		double scaling = mean1 / mean2;
 		
 		double tradeSize1 = tradeSize;
 		double tradeSize2 = tradeSize * scaling * Math.abs(slope);
 		
-		double alpha = 1 - 1 / windowSize;
-		double mean1 = 0; // mean(histQuotes.get(ticker1);
-		double mean2 = 0; // mean(histQuotes.get(ticker2);
 		double residual = 0;
 		
 		mean1 = alpha * mean1 + (1 - alpha) * tradePrice1;
-		mean1 = alpha * mean1 + (1 - alpha) * tradePrice1;
+		mean2 = alpha * mean2 + (1 - alpha) * tradePrice2;
 
 		if (slope < 0){ // small residual: buy both; large residual: sell both;
 			// no position

@@ -59,7 +59,9 @@ public class QuotesOrderProcessor extends ApiController{
 		counter.addAndGet(1);
 		try{
 			writeNbboToFile(ticker);
-		}catch(IOException ex){}
+		}catch(IOException ex){
+			System.out.println(ex.toString());
+		}
 		displayTimeNQuote(lastNbbo);
 	}
 
@@ -82,7 +84,9 @@ public class QuotesOrderProcessor extends ApiController{
 		counter.addAndGet(1);
 		try{
 			writeNbboToFile(ticker);
-		}catch(IOException ex){}
+		}catch(IOException ex){
+			System.out.println(ex.toString());
+		}
 //		if (counter.get() > 10000){
 //			try{
 //				writeQuotes();
@@ -133,7 +137,7 @@ public class QuotesOrderProcessor extends ApiController{
 						   Calendar.getInstance().get(Calendar.DATE), 9, 27).getTime();
 		long tNow = new Date().getTime();
 		if (tNow < t && tNow > t2){ //if we are within market open
-			String fileName = "C:/Users/Long Wang/Dropbox/data/" 
+			String fileName = "C:/Users/demon4000/Dropbox/data/" 
 							+ ticker + "_"
 							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
 							+ ".csv";
