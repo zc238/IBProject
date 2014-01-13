@@ -13,6 +13,23 @@ import com.ib.controller.Types.Action;
 public class TradeStrategy{
 	private HashMap<String, Integer> position = new HashMap<String, Integer>();
 
+	private class Regression{
+		private double beta;
+		private double intercept;
+		public Regression(double[] ys, double[] xs){
+			DoubleArrayList daXs = new DoubleArrayList(xs);
+			DoubleArrayList daYs = new DoubleArrayList(ys);
+			beta = Descriptive.covariance(daYs, daXs) / Descriptive.covariance(daXs, daXs);
+			intercept = Descriptive.mean(daYs) - Descriptive.mean(daXs) * beta;
+		}
+		public double getBeta() {
+			return beta;
+		}
+		public double getIntercept() {
+			return intercept;
+		}
+	}
+	
 	public void initialPosition(String ticker){
 		position.put(ticker, 0);
 	}
