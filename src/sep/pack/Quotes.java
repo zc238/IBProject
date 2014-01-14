@@ -64,10 +64,15 @@ public class Quotes{
 	public void setBidSize(int bidSize) {
 		this.bidSize = bidSize;
 	}
+	
 	public void setAskSize(int askSize) {
 		this.askSize = askSize;
 	}
 
+	public double getImbalance(){
+		return (bidSize + 0.0) / (bidSize + askSize + 0.0);
+	}
+	
 	public void setReqId(int reqId) {
 		this.reqId = reqId;
 	}

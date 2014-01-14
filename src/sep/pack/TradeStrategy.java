@@ -3,7 +3,7 @@ package sep.pack;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Vector;
 
 import cern.colt.list.DoubleArrayList;
 import cern.jet.stat.Descriptive;
@@ -11,8 +11,13 @@ import cern.jet.stat.Descriptive;
 import com.ib.controller.Types.Action;
 
 public class TradeStrategy{
-	private HashMap<String, Integer> position = new HashMap<String, Integer>();
-
+	
+	private QuotesOrderLogger marketdata;
+	
+	public TradeStrategy(QuotesOrderLogger md){
+		marketdata = md;
+	}
+	
 	private class Regression{
 		private double beta;
 		private double intercept;
@@ -32,19 +37,12 @@ public class TradeStrategy{
 		public double getBeta() {
 			return beta;
 		}
+		
 		public double getIntercept() {
 			return intercept;
 		}
 	}
-	
-	public void initialPosition(String ticker){
-		position.put(ticker, 0);
-	}
-	
-	public void updatePosition(String ticker, int amount){
-		position.put(ticker, position.get(ticker) + amount);
-	}
-	
+		
 	public double tCost(String ticker, double orderImba){
 		double TC = 0;
 		if (ticker == "SPY"){
@@ -81,26 +79,22 @@ public class TradeStrategy{
 	private DoubleArrayList convertQuoteToDList(List<Quotes> quotes){
 		DoubleArrayList l = new DoubleArrayList();
 		for (Quotes q : quotes){
-			l.add((q.getAsk() + q.getBid())/2);
+			l.add(q.getMidPrice());
 		}
 		return l;
 	}
 	
-	public List<OrderContractContainer> getOrdersFromHistQuotes(String ticker1, 
-																  String ticker2, 
-																  ConcurrentHashMap<String, Quotes> latestNbbo, 
-																  double slope, 
-																  int tradeSize, 
-																  int windowSize, 
-																  HashMap<String, Integer> position, 
-																  HashMap<String, List<Quotes>> histQuotes){
+	public List<OrderContractContainer> getOrdersFromHistQuotes(String ticker1, String ticker2, 
+																	double slope, int tradeSize, int windowSize){
+		HashMap<String, Vector<Quotes>> histQuotes = marketdata.getStoredData();
 		double threshold = 0;
-		Quotes quote1 = latestNbbo.get(ticker1);
-		Quotes quote2 = latestNbbo.get(ticker2);
-		double orderImba1 = quote1.getBidSize() / (quote1.getBidSize() + quote1.getAskSize());
-		double orderImba2 = quote2.getBidSize() / (quote2.getBidSize() + quote2.getAskSize());
-		double tradePrice1 =(quote1.getBidSize() + quote1.getAskSize()) / 2;
-		double tradePrice2 =(quote2.getBidSize() + quote2.getAskSize()) / 2;
+		Quotes quote1 = marketdata.getLatestNbbo(ticker1);
+		Quotes quote2 = marketdata.getLatestNbbo(ticker2);
+		double orderImba1 = quote1.getImbalance();
+		double orderImba2 = quote2.getImbalance();
+		
+		double tradePrice1 = quote1.getMidPrice();
+		double tradePrice2 = quote2.getMidPrice();
 		
 		DoubleArrayList avgTick1Q = convertQuoteToDList(histQuotes.get(ticker1));
 		DoubleArrayList avgTick2Q = convertQuoteToDList(histQuotes.get(ticker2));
@@ -126,7 +120,7 @@ public class TradeStrategy{
 		
 		if (slope < 0){ // small residual: buy both; large residual: sell both;
 			// no position
-			if ((position.get(ticker1) == 0) && (position.get(ticker2) == 0)){
+			if ((marketdata.getPosition(ticker1) == 0) && (marketdata.getPosition(ticker2) == 0)){
 				if (expectedProfit(ticker1, ticker2, residual) > threshold 
 						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
@@ -141,7 +135,7 @@ public class TradeStrategy{
 				}
 			}
 			// long position, short only
-			else if ((position.get(ticker1) > 0) && (position.get(ticker2) > 0)){
+			else if ((marketdata.getPosition(ticker1) > 0) && (marketdata.getPosition(ticker2) > 0)){
 				if (-expectedProfit(ticker1, ticker2, residual) > threshold 
 						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
@@ -150,7 +144,7 @@ public class TradeStrategy{
 				}		
 			}
 			// short position, long only
-			else if ((position.get(ticker1) < 0) && (position.get(ticker2) < 0)){
+			else if ((marketdata.getPosition(ticker1) < 0) && (marketdata.getPosition(ticker2) < 0)){
 				if (expectedProfit(ticker1, ticker2, residual) > threshold 
 						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
@@ -161,7 +155,7 @@ public class TradeStrategy{
 		}
 		else if (slope > 0){ // small residual: buy ticker1 and sell ticker2; large residual: sell ticker1 and buy ticker2;
 			// no position
-			if ((position.get(ticker1) == 0) && (position.get(ticker2) == 0)){
+			if ((marketdata.getPosition(ticker1) == 0) && (marketdata.getPosition(ticker2) == 0)){
 				if (expectedProfit(ticker1, ticker2, residual) > threshold 
 						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
@@ -176,7 +170,7 @@ public class TradeStrategy{
 				}
 			}
 			// ticker1 long position, sell ticker1 and buy ticker2 only
-			else if ((position.get(ticker1) > 0) && (position.get(ticker2) < 0)){
+			else if ((marketdata.getPosition(ticker1) > 0) && (marketdata.getPosition(ticker2) < 0)){
 				if (-expectedProfit(ticker1, ticker2, residual) > threshold 
 						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
@@ -185,7 +179,7 @@ public class TradeStrategy{
 				}		
 			}
 			// ticker1 short position, buy ticker1 and sell ticker2 only
-			else if ((position.get(ticker1) < 0) && (position.get(ticker2) < 0)){
+			else if ((marketdata.getPosition(ticker1) < 0) && (marketdata.getPosition(ticker2) < 0)){
 				if (expectedProfit(ticker1, ticker2, residual) > threshold 
 						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
 						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){

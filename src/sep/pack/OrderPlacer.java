@@ -15,8 +15,6 @@ public class OrderPlacer{
 	public static String acct = ""; //"DU168728"
 	public static AtomicInteger orderID = new AtomicInteger(0);
 	
-
-	
 	public void sendOrder(ApiConnection connection, String ticker, int quantity, Action action){
 		System.out.println("Placing Order for Order ID: " + (OrderPlacer.orderID.get() + 1));
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));

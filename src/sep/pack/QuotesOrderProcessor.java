@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -21,7 +22,7 @@ import com.ib.controller.OrderStatus;
 
 public class QuotesOrderProcessor extends ApiController{
 //	private Vector<String> dataHolder = new Vector<String>();
-	private QuotesLogger records = new QuotesLogger();
+	private QuotesOrderLogger records = new QuotesOrderLogger();
 	private AtomicInteger counter = new AtomicInteger(0);
 	private QuotesOrderController controller;
 	
@@ -55,7 +56,7 @@ public class QuotesOrderProcessor extends ApiController{
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);
-		records.getStoredData().add(lastNbbo);
+		records.getStoredData().get(ticker).add(lastNbbo);
 		counter.addAndGet(1);
 		try{
 			writeNbboToFile(ticker);
@@ -79,7 +80,7 @@ public class QuotesOrderProcessor extends ApiController{
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);
-		records.getStoredData().add(lastNbbo);
+		records.getStoredData().get(ticker).add(lastNbbo);
 		//dataHolder.add(reqId + "," + tickType + "," + price + "\n");	
 		counter.addAndGet(1);
 		try{
@@ -120,6 +121,7 @@ public class QuotesOrderProcessor extends ApiController{
 	}
 	
 	public void orderStatus(int orderId, OrderStatus status, int filled, int remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
+		//TODO, update order status (i.e. update using QuotesOrderLogger(records))
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
 	}
 	
@@ -161,8 +163,11 @@ public class QuotesOrderProcessor extends ApiController{
 	private synchronized void writeQuotes() throws IOException{
 		File quotes = new File("C:/cfem2013/quotes.csv");
 		FileWriter writer = new FileWriter(quotes,true);
-		for (Quotes q : records.getStoredData()){
-			writer.write(q.toString());
+		for (String ticker : records.getStoredData().keySet()){
+			Vector<Quotes> qs = records.getStoredData().get(ticker);
+			for (Quotes q : qs){
+				writer.write(q.toString());
+			}
 		}
 		records.getStoredData().clear();
 		writer.close();
