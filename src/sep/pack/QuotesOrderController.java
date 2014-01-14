@@ -36,6 +36,7 @@ public class QuotesOrderController extends ApiController{
 	public void reqIDs(){
 		connection.reqIds(1);
 	}
+	
 	private NewContract createContract(String ticker){
 		Vector<ComboLeg> cblg = new Vector<ComboLeg>();
 		Contract c = new Contract(0, ticker, "STK", "", 0.0, "", "",

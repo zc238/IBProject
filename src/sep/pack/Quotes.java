@@ -56,6 +56,11 @@ public class Quotes{
 	public void setAsk(double ask) {
 		this.ask = ask;
 	}
+	
+	public double getMidPrice(){
+		return (bid + ask) / 2;
+	}
+	
 	public void setBidSize(int bidSize) {
 		this.bidSize = bidSize;
 	}

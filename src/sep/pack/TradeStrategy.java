@@ -16,12 +16,19 @@ public class TradeStrategy{
 	private class Regression{
 		private double beta;
 		private double intercept;
-		public Regression(double[] ys, double[] xs){
-			DoubleArrayList daXs = new DoubleArrayList(xs);
-			DoubleArrayList daYs = new DoubleArrayList(ys);
+		
+//		public Regression(double[] ys, double[] xs){
+//			DoubleArrayList daXs = new DoubleArrayList(xs);
+//			DoubleArrayList daYs = new DoubleArrayList(ys);
+//			beta = Descriptive.covariance(daYs, daXs) / Descriptive.covariance(daXs, daXs);
+//			intercept = Descriptive.mean(daYs) - Descriptive.mean(daXs) * beta;
+//		}
+		
+		public Regression(DoubleArrayList daYs, DoubleArrayList daXs){
 			beta = Descriptive.covariance(daYs, daXs) / Descriptive.covariance(daXs, daXs);
 			intercept = Descriptive.mean(daYs) - Descriptive.mean(daXs) * beta;
 		}
+		
 		public double getBeta() {
 			return beta;
 		}
@@ -107,7 +114,9 @@ public class TradeStrategy{
 		int tradeSize1 = tradeSize;
 		int tradeSize2 = (int) (tradeSize * scaling * Math.abs(slope));
 		
-		double residual = 0;
+		Regression reg = new Regression(avgTick2Q, avgTick1Q);
+		
+		double residual = quote2.getMidPrice() - quote1.getMidPrice() * reg.getBeta() - reg.getIntercept();
 		
 		mean1 = alpha * mean1 + (1 - alpha) * tradePrice1;
 		mean2 = alpha * mean2 + (1 - alpha) * tradePrice2;
