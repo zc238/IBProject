@@ -29,6 +29,13 @@ public class QuotesOrderLogger {
 		return storedData;
 	}
 	
+	public void addQuotesToRecords(String ticker, Quotes q){
+		if (storedData.get(ticker) == null){
+			storedData.put(ticker, new Vector<Quotes>());
+		}
+		storedData.get(ticker).add(q);
+	}
+	
 	public ConcurrentHashMap<String, Quotes> getNbboMap(){
 		return latestNbbo;
 	}

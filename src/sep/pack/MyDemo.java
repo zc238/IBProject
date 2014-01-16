@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.ib.controller.ApiConnection.ILogger;
 import com.ib.controller.ApiController.IConnectionHandler;
+import com.ib.controller.Types.Action;
 
 public class MyDemo {
 	private static class MyLogger implements ILogger {
@@ -30,12 +31,13 @@ public class MyDemo {
 
 		@Override
 		public void accountList(ArrayList<String> list) {
-			System.out.println("Whats This");
+			OrderPlacer.acct = list.get(0); 
+			System.out.println("Updating Account Information for Account: " + OrderPlacer.acct);
 		}
 
 		@Override
-		public void error(Exception e) {
-			System.out.println("Long is a funny guy, he is errored...boom: "+e.toString());
+		public void error(Exception e) { //Go to EReader for ultimate cause
+			System.out.println("Long is a funny guy, he is errored...boom: "+e.getCause().toString());
 		}
 
 		@Override

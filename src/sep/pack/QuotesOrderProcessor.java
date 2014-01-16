@@ -56,7 +56,7 @@ public class QuotesOrderProcessor extends ApiController{
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);
-		records.getStoredData().get(ticker).add(lastNbbo);
+		records.addQuotesToRecords(ticker, lastNbbo);
 		counter.addAndGet(1);
 		try{
 			writeNbboToFile(ticker);
@@ -80,7 +80,7 @@ public class QuotesOrderProcessor extends ApiController{
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);
-		records.getStoredData().get(ticker).add(lastNbbo);
+		records.addQuotesToRecords(ticker, lastNbbo);
 		//dataHolder.add(reqId + "," + tickType + "," + price + "\n");	
 		counter.addAndGet(1);
 		try{
@@ -102,7 +102,6 @@ public class QuotesOrderProcessor extends ApiController{
 	}
 	
 	@Override public void openOrder(int orderId, Contract contract, Order orderIn, OrderState orderState) {
-		OrderPlacer.acct = orderIn.m_account; //update acct, a hack...
 		System.out.println("Receiving Order Information for Order ID: " + orderId);
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
 	}
