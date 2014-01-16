@@ -1,5 +1,7 @@
 package sep.pack;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Vector;
 
 import com.ib.client.ComboLeg;
@@ -18,13 +20,13 @@ public class OrderUtility {
 	}
 	
 	public static NewOrder createNewOrder(int quantity, Action buySell){
-		return createNewOrder(quantity, buySell, false, 1);
+		return createNewOrder(quantity, buySell, true, 1);
 	}
 	
 	// construct a order
 	public static NewOrder createNewOrder(int quantity, Action buySell, boolean isMarket, double limitPrice){
 		NewOrder order = new NewOrder();
-		order.account(OrderPlacer.acct);
+		order.account(UserInfo.acct);
 		order.action(buySell);
 		if (isMarket){
 			order.orderType(OrderType.MKT);
@@ -33,7 +35,11 @@ public class OrderUtility {
 		}
 		order.totalQuantity(quantity);
 		order.lmtPrice(limitPrice);
-		order.orderId(OrderPlacer.orderID.incrementAndGet());
+		order.orderId(UserInfo.orderID.incrementAndGet());
 		return order;
+	}
+	
+	public static void displayTime(){
+		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
 	}
 }

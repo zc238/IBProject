@@ -82,7 +82,7 @@ public class Quotes{
 	}
 	
 	public boolean hasZero(){
-		if (bid == 0 || ask == 0 && bidSize == 0 && askSize == 0){
+		if (bid == 0 || ask == 0 || bidSize == 0 || askSize == 0){
 			return true;
 		}
 		return false;

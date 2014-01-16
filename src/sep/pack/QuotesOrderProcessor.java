@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,26 +20,18 @@ import com.ib.controller.NewOrderState;
 import com.ib.controller.OrderStatus;
 
 public class QuotesOrderProcessor extends ApiController{
-//	private Vector<String> dataHolder = new Vector<String>();
-	private QuotesOrderLogger records = new QuotesOrderLogger();
+	private QuotesOrderLogger records;
 	private AtomicInteger counter = new AtomicInteger(0);
-	private QuotesOrderController controller;
 	
 	private void displayTimeNQuote(Quotes q){
 		System.out.println(q.toString());
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
 	}
 	
-	public QuotesOrderProcessor(IConnectionHandler handler, ILogger inLogger, ILogger outLogger, QuotesOrderController control) {
+	public QuotesOrderProcessor(IConnectionHandler handler, ILogger inLogger, ILogger outLogger, QuotesOrderLogger r) {
 		super(handler, inLogger, outLogger);
-		controller = control;
-		try{
-			controller.getLock().acquire();
-		}catch(Exception e){
-			System.out.println("Fail to Acquire Lock");
-		}
+		records = r;
 	}
-	
 	
 	@Override public void tickGeneric(int reqId, int tickType, double value) {
 		System.out.println("Geneic Update for Req ID: " + reqId + "; tickType: " + tickType + "; value: " + value);
@@ -51,7 +42,7 @@ public class QuotesOrderProcessor extends ApiController{
 		if (tickType != 0 && tickType != 3){ return; }
 		Quotes lastNbbo = records.getLatestNbbo(QuotesOrderController.REQ_TO_TICKER.get(reqId));
 		switch(tickType){
-			case 0: lastNbbo.setBidSize(size);; break;
+			case 0: lastNbbo.setBidSize(size); break;
 			case 3: lastNbbo.setAskSize(size); break;
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
@@ -81,7 +72,6 @@ public class QuotesOrderProcessor extends ApiController{
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);
 		records.addQuotesToRecords(ticker, lastNbbo);
-		//dataHolder.add(reqId + "," + tickType + "," + price + "\n");	
 		counter.addAndGet(1);
 		try{
 			writeNbboToFile(ticker);
@@ -97,13 +87,36 @@ public class QuotesOrderProcessor extends ApiController{
 	}
 	
 	@Override public void nextValidId(int orderId) {
-		OrderPlacer.orderID.set(orderId);
-		controller.getLock().release();
+		UserInfo.orderID.set(orderId);
 	}
 	
+	//TODO, refactor this code
 	@Override public void openOrder(int orderId, Contract contract, Order orderIn, OrderState orderState) {
+		UserInfo.acct = orderIn.m_account;
 		System.out.println("Receiving Order Information for Order ID: " + orderId);
-		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+		System.out.println(orderIn.m_action + " " + contract.m_symbol + 
+							". The state is: " + orderState.m_status + 
+							". OrderType: " + orderIn.m_orderType);
+		if (records.hasOrder(orderId)){ //otherwise, it is already processed
+//			if (orderState.m_status.toUpperCase().equals("PRESUBMITTED")
+//				|| orderState.m_status.toUpperCase().equals("SUBMITTED")
+//				|| orderState.m_status.toUpperCase().equals("PENDINGSUBMITTED")){
+//				if (orderIn.m_action.toUpperCase().equals("BUY")){
+//					records.addToSubmittedPositions(contract.m_symbol, orderIn.m_totalQuantity);
+//				}else{
+//					records.addToSubmittedPositions(contract.m_symbol, -orderIn.m_totalQuantity);
+//				}
+//			}else 
+			if (orderState.m_status.toUpperCase().equals("FILLED")){
+				if (orderIn.m_action.toUpperCase().equals("BUY")){
+					records.addToCurrentPositions(contract.m_symbol, orderIn.m_totalQuantity);
+				}else{
+					records.addToCurrentPositions(contract.m_symbol, -orderIn.m_totalQuantity);
+				}
+				records.removeActiveOrder(orderId);
+			}
+		}
+		OrderUtility.displayTime();
 	}
 	
 	public void openOrder(NewContract contract, NewOrder order, NewOrderState orderState) {
@@ -121,41 +134,29 @@ public class QuotesOrderProcessor extends ApiController{
 	
 	public void orderStatus(int orderId, OrderStatus status, int filled, int remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
 		//TODO, update order status (i.e. update using QuotesOrderLogger(records))
-		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+		//Also need to get rid of submitted orders
+		OrderUtility.displayTime();
 	}
 	
 	public void handle(int orderId, int errorCode, String errorMsg) {
 		System.out.println("Order ID: " + orderId + ". Error Message: " + errorMsg);
 	}
 	
-	@SuppressWarnings("deprecation")
 	private synchronized void writeNbboToFile(String ticker) throws IOException{
-		long t = new Date(Calendar.getInstance().get(Calendar.YEAR), 
-						  Calendar.getInstance().get(Calendar.MONTH), 
-						  Calendar.getInstance().get(Calendar.DATE), 16, 05).getTime();
-		long t2 = new Date(Calendar.getInstance().get(Calendar.YEAR), 
-						   Calendar.getInstance().get(Calendar.MONTH), 
-						   Calendar.getInstance().get(Calendar.DATE), 9, 27).getTime();
-		long tNow = new Date().getTime();
-		if (tNow < t && tNow > t2){ //if we are within market open
-			String fileName = "C:/Users/demon4000/Dropbox/data/" 
-							+ ticker + "_"
-							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
-							+ ".csv";
-			File quotes = new File(fileName);
-			FileWriter writer = new FileWriter(quotes, true);
-			ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
-			String row = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + ",";
-			Quotes q = nbboMap.get(ticker);
-			if (q.hasZero()){ writer.close(); return; }
-			row += nbboMap.get(ticker).toStringOnlyQ();
-	//		for (String ticker : nbboMap.keySet()){
-	//			row += nbboMap.get(ticker).toStringOnlyQ();
-	//		}
-			row += "\n";
-			writer.write(row);
-			writer.close();
-		}
+		String fileName = "C:/Users/demon4000/Dropbox/data/" 
+						+ ticker + "_"
+						+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
+						+ "_SNAPSHOTS.csv";
+		File quotes = new File(fileName);
+		FileWriter writer = new FileWriter(quotes, true);
+		ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
+		String row = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + ",";
+		Quotes q = nbboMap.get(ticker);
+		if (q.hasZero()){ writer.close(); return; }
+		row += nbboMap.get(ticker).toStringOnlyQ();
+		row += "\n";
+		writer.write(row);
+		writer.close();
 	}
 	
 	@SuppressWarnings("unused")

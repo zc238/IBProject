@@ -84,6 +84,7 @@ public class TradeStrategy{
 		return l;
 	}
 	
+	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition())
 	public List<OrderContractContainer> getOrdersFromHistQuotes(String ticker1, String ticker2, 
 																	double slope, int tradeSize, int windowSize){
 		HashMap<String, Vector<Quotes>> histQuotes = marketdata.getStoredData();

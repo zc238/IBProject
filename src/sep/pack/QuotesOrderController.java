@@ -4,29 +4,21 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 
 import com.ib.controller.ApiConnection;
 import com.ib.controller.ApiConnection.ILogger;
-import com.ib.controller.ApiController;
+import com.ib.controller.ApiController.IConnectionHandler;
+import com.ib.controller.NewContract;
+import com.ib.controller.NewOrder;
 import com.ib.controller.Types.Action;
 
-//TODO extends ApiController for convinience, will need to redo this part
-public class QuotesOrderController extends ApiController{
+public class QuotesOrderController{
 
 	private ApiConnection connection;
-	private OrderPlacer placer = new OrderPlacer();
-	private Semaphore lock = new Semaphore(1);
 	public static HashMap<Integer, String> REQ_TO_TICKER = new HashMap<Integer, String>();
-	
-	public Semaphore getLock() {
-		return lock;
-	}
 
-	public QuotesOrderController(IConnectionHandler handler, ILogger inLogger, ILogger outLogger) {
-		super(handler, inLogger, outLogger);
-		QuotesOrderProcessor wrapper = new QuotesOrderProcessor(handler, inLogger, outLogger, this);
-		connection = new ApiConnection(wrapper, inLogger, outLogger);
+	public QuotesOrderController(IConnectionHandler handler, ILogger inLogger, ILogger outLogger, QuotesOrderProcessor processor) {
+		connection = new ApiConnection(processor, inLogger, outLogger);
 	}
 
 	public void reqIDs(){
@@ -51,16 +43,47 @@ public class QuotesOrderController extends ApiController{
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
 	}
 	
-	public void sendOrder(String ticker, int quantity, Action action){
+	public void sendOrder(String ticker, int quantity, Action action, double limitPrice) throws InterruptedException{
 		if (!connection.isConnected()){
 			makeconnection();
 		}
-		try {
-			lock.acquire();
-			placer.sendOrder(this.connection, ticker, quantity, action);
-		} catch (InterruptedException e) {
-			System.out.println("Fail to acquire lock...");
-			e.printStackTrace();
-		}		
+		while (UserInfo.orderID.get() == -1){
+			Thread.sleep(1000);
+		}
+		
+		System.out.println("Placing Order for Order ID: " + (UserInfo.orderID.get() + 1));
+		OrderUtility.displayTime();
+		NewContract contract = OrderUtility.createContract(ticker);
+		NewOrder order = OrderUtility.createNewOrder(quantity, action, false, limitPrice);
+		connection.placeOrder(contract, order);
+		System.out.println("Orders Sent");
+	}
+	
+	public void sendOrder(String ticker, int quantity, Action action) throws InterruptedException{
+		if (!connection.isConnected()){
+			makeconnection();
+		}
+		while (UserInfo.orderID.get() == -1){
+			Thread.sleep(1000);
+		}
+		
+		System.out.println("Placing Order for Order ID: " + (UserInfo.orderID.get() + 1));
+		OrderUtility.displayTime();
+		NewContract contract = OrderUtility.createContract(ticker);
+		NewOrder order = OrderUtility.createNewOrder(quantity, action);
+		connection.placeOrder(contract, order);
+		System.out.println("Orders Sent");
+	}
+	
+	public void sendOrder(ApiConnection connection, OrderContractContainer container) throws InterruptedException{
+		while (UserInfo.orderID.get() == -1){
+			Thread.sleep(1000);
+		}
+		System.out.println("Placing Order for Order ID: " + (UserInfo.orderID.get() + 1));
+		OrderUtility.displayTime();
+		NewContract contract = container.getContract();
+		NewOrder order = container.getOrder();
+		connection.placeOrder(contract, order);
+		System.out.println("Orders Sent");
 	}
 }

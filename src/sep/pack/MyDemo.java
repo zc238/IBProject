@@ -9,7 +9,6 @@ import java.util.List;
 
 import com.ib.controller.ApiConnection.ILogger;
 import com.ib.controller.ApiController.IConnectionHandler;
-import com.ib.controller.Types.Action;
 
 public class MyDemo {
 	private static class MyLogger implements ILogger {
@@ -21,28 +20,28 @@ public class MyDemo {
 	private static class LazyHandler implements IConnectionHandler {
 		@Override
 		public void connected() {
-			System.out.println("Long is a funny guy, he is connected...boom");
+			System.out.println("Connection Established.");
 		}
 
 		@Override
 		public void disconnected() {
-			System.out.println("Long is a funny guy, he is disconnected...boom");	
+			System.out.println("Disconnected.");	
 		}
 
 		@Override
 		public void accountList(ArrayList<String> list) {
-			OrderPlacer.acct = list.get(0); 
-			System.out.println("Updating Account Information for Account: " + OrderPlacer.acct);
+			UserInfo.acct = list.get(0); 
+			System.out.println("Updating Account Information for Account: " + UserInfo.acct);
 		}
 
 		@Override
 		public void error(Exception e) { //Go to EReader for ultimate cause
-			System.out.println("Long is a funny guy, he is errored...boom: "+e.getCause().toString());
+			System.out.println("It's all Long's fault...boom: "+e.getCause().toString());
 		}
 
 		@Override
 		public void message(int id, int errorCode, String errorMsg) {
-			System.out.println("Long is a funny guy, he is messaged...boom " + errorMsg);
+			System.out.println("MSG From IB: " + errorMsg);
 		}
 
 		@Override
@@ -50,19 +49,23 @@ public class MyDemo {
 			System.out.println("Long is a funny guy, he is shown...boom: MSG="+string);
 		}
 	}
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		
 		MyLogger m_inLogger = new MyLogger();
 		MyLogger m_outLogger = new MyLogger();
 
-		QuotesOrderController retriever = new QuotesOrderController( new LazyHandler(), m_inLogger, m_outLogger );
+		LazyHandler handler = new LazyHandler();
+		QuotesOrderLogger logger = new QuotesOrderLogger();
+		QuotesOrderProcessor processor = new QuotesOrderProcessor(handler, m_inLogger, m_inLogger, logger);
+		QuotesOrderController retriever = new QuotesOrderController(handler, m_inLogger, m_outLogger, processor);
 		
 		retriever.makeconnection();
 		
 		@SuppressWarnings("serial")
-		List<String> tickers = new LinkedList<String>(){{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRC");}};
-
+		List<String> tickers = new LinkedList<String>(){{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRO");}};
 		retriever.reqMktData(tickers);
-		//retriever.sendOrder("SPY", 100, Action.BUY);
+		
+//		retriever.sendOrder("SPY", 100, Action.BUY);
+//		retriever.sendOrder("SPY", 100, Action.BUY, 130);
 	}
 }

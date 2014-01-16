@@ -7,6 +7,8 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.JFrame;
@@ -55,21 +57,22 @@ public class ApiDemo implements IConnectionHandler {
 	private final StratPanel m_stratPanel = new StratPanel();
 	private final JTextArea m_msg = new JTextArea();
 
-	private final QuotesOrderController retriever = new QuotesOrderController( this, m_inLogger, m_outLogger);
+//	private final QuotesOrderController retriever = new QuotesOrderController( this, m_inLogger, m_outLogger);
 	
 	// getter methods
 	public ArrayList<String> accountList() 	{ return m_acctList; }
 	public ApiController controller() 		{ return m_controller; }
 	public JFrame frame() 					{ return m_frame; }
 	
-	public QuotesOrderController myController() { return retriever; }
+//	public QuotesOrderController myController() { return retriever; }
 	
 //	public static void main(String[] args) {
-////		INSTANCE.run();	
+//		INSTANCE.run();	
 //		
-//		INSTANCE.myController().makeconnection();
-////		INSTANCE.myController().sendOrder("SPY", 100, Action.BUY);
-//		INSTANCE.myController().reqMktData();
+////		INSTANCE.myController().makeconnection();
+////////		INSTANCE.myController().sendOrder("SPY", 100, Action.BUY);
+////		List<String> tickers = new LinkedList<String>(){{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRC");}};
+////		INSTANCE.myController().reqMktData(tickers);
 //	}
 	
 	private void run() {
