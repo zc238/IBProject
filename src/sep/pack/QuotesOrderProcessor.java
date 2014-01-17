@@ -98,15 +98,6 @@ public class QuotesOrderProcessor extends ApiController{
 							". The state is: " + orderState.m_status + 
 							". OrderType: " + orderIn.m_orderType);
 		if (records.hasOrder(orderId)){ //otherwise, it is already processed
-//			if (orderState.m_status.toUpperCase().equals("PRESUBMITTED")
-//				|| orderState.m_status.toUpperCase().equals("SUBMITTED")
-//				|| orderState.m_status.toUpperCase().equals("PENDINGSUBMITTED")){
-//				if (orderIn.m_action.toUpperCase().equals("BUY")){
-//					records.addToSubmittedPositions(contract.m_symbol, orderIn.m_totalQuantity);
-//				}else{
-//					records.addToSubmittedPositions(contract.m_symbol, -orderIn.m_totalQuantity);
-//				}
-//			}else 
 			if (orderState.m_status.toUpperCase().equals("FILLED")){
 				if (orderIn.m_action.toUpperCase().equals("BUY")){
 					records.addToCurrentPositions(contract.m_symbol, orderIn.m_totalQuantity);
@@ -116,6 +107,15 @@ public class QuotesOrderProcessor extends ApiController{
 				records.removeActiveOrder(orderId);
 			}
 		}
+//		if (orderState.m_status.toUpperCase().equals("PRESUBMITTED")
+//		|| orderState.m_status.toUpperCase().equals("SUBMITTED")
+//		|| orderState.m_status.toUpperCase().equals("PENDINGSUBMITTED")){
+//		if (orderIn.m_action.toUpperCase().equals("BUY")){
+//			records.addToSubmittedPositions(contract.m_symbol, orderIn.m_totalQuantity);
+//		}else{
+//			records.addToSubmittedPositions(contract.m_symbol, -orderIn.m_totalQuantity);
+//		}
+//	}else 
 		OrderUtility.displayTime();
 	}
 	
@@ -135,6 +135,7 @@ public class QuotesOrderProcessor extends ApiController{
 	public void orderStatus(int orderId, OrderStatus status, int filled, int remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
 		//TODO, update order status (i.e. update using QuotesOrderLogger(records))
 		//Also need to get rid of submitted orders
+		//This method will not get triggered for paper trading accounts
 		OrderUtility.displayTime();
 	}
 	

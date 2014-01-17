@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.ib.controller.ApiConnection;
-import com.ib.controller.ApiConnection.ILogger;
 import com.ib.controller.ApiController.IConnectionHandler;
 import com.ib.controller.NewContract;
 import com.ib.controller.NewOrder;
@@ -15,10 +14,12 @@ import com.ib.controller.Types.Action;
 public class QuotesOrderController{
 
 	private ApiConnection connection;
+	private QuotesOrderLogger logger;
 	public static HashMap<Integer, String> REQ_TO_TICKER = new HashMap<Integer, String>();
 
-	public QuotesOrderController(IConnectionHandler handler, ILogger inLogger, ILogger outLogger, QuotesOrderProcessor processor) {
-		connection = new ApiConnection(processor, inLogger, outLogger);
+	public QuotesOrderController(IConnectionHandler handler, QuotesOrderProcessor p, QuotesOrderLogger log) {
+		connection = new ApiConnection(p, new MyLogger(), new MyLogger());
+		logger = log;
 	}
 
 	public void reqIDs(){
@@ -56,6 +57,7 @@ public class QuotesOrderController{
 		NewContract contract = OrderUtility.createContract(ticker);
 		NewOrder order = OrderUtility.createNewOrder(quantity, action, false, limitPrice);
 		connection.placeOrder(contract, order);
+		logger.addActiveOrder(UserInfo.orderID.get());
 		System.out.println("Orders Sent");
 	}
 	
@@ -72,10 +74,14 @@ public class QuotesOrderController{
 		NewContract contract = OrderUtility.createContract(ticker);
 		NewOrder order = OrderUtility.createNewOrder(quantity, action);
 		connection.placeOrder(contract, order);
+		logger.addActiveOrder(UserInfo.orderID.get());
 		System.out.println("Orders Sent");
 	}
 	
-	public void sendOrder(ApiConnection connection, OrderContractContainer container) throws InterruptedException{
+	public void sendOrder(OrderContractContainer container) throws InterruptedException{
+		if (!connection.isConnected()){
+			makeconnection();
+		}
 		while (UserInfo.orderID.get() == -1){
 			Thread.sleep(1000);
 		}

@@ -84,7 +84,7 @@ public class TradeStrategy{
 		return l;
 	}
 	
-	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition())
+	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition()); does not need to consider for paper trading, since all positions are filled immediately
 	public List<OrderContractContainer> getOrdersFromHistQuotes(String ticker1, String ticker2, 
 																	double slope, int tradeSize, int windowSize){
 		HashMap<String, Vector<Quotes>> histQuotes = marketdata.getStoredData();
@@ -116,8 +116,8 @@ public class TradeStrategy{
 		mean1 = alpha * mean1 + (1 - alpha) * tradePrice1;
 		mean2 = alpha * mean2 + (1 - alpha) * tradePrice2;
 
-		Action action1 = Action.BUY;
-		Action action2 = Action.BUY;
+		Action action1 = null;
+		Action action2 = null;
 		
 		if (slope < 0){ // small residual: buy both; large residual: sell both;
 			// no position
@@ -197,6 +197,10 @@ public class TradeStrategy{
 														  int size1, int size2,
 														  Action action1, Action action2){
 		List<OrderContractContainer> orders = new LinkedList<OrderContractContainer>();
+		if (action1 == null || action2 == null){
+			return orders; // 0 size, no trades
+		}
+		
 		OrderContractContainer oc1 = new OrderContractContainer(OrderUtility.createContract(ticker1), 
 																OrderUtility.createNewOrder(size1, action1));
 		orders.add(oc1);
