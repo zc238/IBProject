@@ -43,7 +43,7 @@ public class TradeStrategy{
 		}
 	}
 		
-	public double tCost(String ticker, double orderImba){
+	public double transCost(String ticker, double orderImba){
 		double TC = 0;
 		if (ticker == "SPY"){
 			TC = 0; // a function of orderImba
@@ -123,14 +123,14 @@ public class TradeStrategy{
 			// no position
 			if ((marketdata.getPosition(ticker1) == 0) && (marketdata.getPosition(ticker2) == 0)){
 				if (expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
+						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - transCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - transCost(ticker2, orderImba2))){
 					// buy both at ask
 					action1 = Action.BUY; action2 = Action.BUY;
 				}
 				else if (-expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
+						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + transCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + transCost(ticker2, orderImba2))){
 					// sell both at bid
 					action1 = Action.SELL; action2 = Action.SELL;					
 				}
@@ -138,8 +138,8 @@ public class TradeStrategy{
 			// long position, short only
 			else if ((marketdata.getPosition(ticker1) > 0) && (marketdata.getPosition(ticker2) > 0)){
 				if (-expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
+						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + transCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + transCost(ticker2, orderImba2))){
 					// sell at both bid
 					action1 = Action.SELL; action2 = Action.SELL;					
 				}		
@@ -147,8 +147,8 @@ public class TradeStrategy{
 			// short position, long only
 			else if ((marketdata.getPosition(ticker1) < 0) && (marketdata.getPosition(ticker2) < 0)){
 				if (expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
+						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - transCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - transCost(ticker2, orderImba2))){
 					// buy at both ask
 					action1 = Action.BUY; action2 = Action.BUY;
 				}
@@ -158,14 +158,14 @@ public class TradeStrategy{
 			// no position
 			if ((marketdata.getPosition(ticker1) == 0) && (marketdata.getPosition(ticker2) == 0)){
 				if (expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
+						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - transCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + transCost(ticker2, orderImba2))){
 					// buy ticker1 at ask; sell ticker2 at bid
 					action1 = Action.BUY; action2 = Action.SELL;
 				}
 				else if (-expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
+						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + transCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - transCost(ticker2, orderImba2))){
 					// sell ticker1 at bid; buy ticker2 at ask
 					action1 = Action.SELL; action2 = Action.BUY;					
 				}
@@ -173,8 +173,8 @@ public class TradeStrategy{
 			// ticker1 long position, sell ticker1 and buy ticker2 only
 			else if ((marketdata.getPosition(ticker1) > 0) && (marketdata.getPosition(ticker2) < 0)){
 				if (-expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + tCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - tCost(ticker2, orderImba2))){
+						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + transCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - transCost(ticker2, orderImba2))){
 					// sell ticker1 at bid; buy ticker2 at ask
 					action1 = Action.SELL; action2 = Action.BUY;
 				}		
@@ -182,8 +182,8 @@ public class TradeStrategy{
 			// ticker1 short position, buy ticker1 and sell ticker2 only
 			else if ((marketdata.getPosition(ticker1) < 0) && (marketdata.getPosition(ticker2) < 0)){
 				if (expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - tCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + tCost(ticker2, orderImba2))){
+						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - transCost(ticker1, orderImba1)) 
+						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + transCost(ticker2, orderImba2))){
 					// buy ticker1 at ask; sell ticker2 at bid
 					action1 = Action.BUY; action2 = Action.SELL;
 				}
