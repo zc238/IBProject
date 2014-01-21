@@ -46,20 +46,34 @@ public class MyDemo {
 	}
 	
 	public static void main(String[] args) throws InterruptedException {
-		@SuppressWarnings("serial")
-		List<String> tickers = new LinkedList<String>(){{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRO");}};
 		
+		// Wirings
+		List<String> tickers = new LinkedList<String>(){
+			private static final long serialVersionUID = 1526140478688889373L;
+
+		{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRO");}};
 		MyLogger m_inLogger = new MyLogger();
 		LazyHandler handler = new LazyHandler();
 		QuotesOrderLogger logger = new QuotesOrderLogger();
-		QuotesOrderProcessor processor = new QuotesOrderProcessor(handler, m_inLogger, m_inLogger, logger);
+		QuotesOrderProcessor processor = new QuotesOrderProcessor(handler, m_inLogger, 
+																	m_inLogger, logger, 
+																	"C:/Users/demon4000/Dropbox/data/", 
+																	"C:/Users/demon4000/Dropbox/cleanData/");
+		
 		QuotesOrderController retriever = new QuotesOrderController(handler, processor, logger);
 		TradeStrategy strategy = new TradeStrategy(logger);
 		
+		// Retrieve Market Data
 		retriever.makeconnection();
 		retriever.reqMktData(tickers);
 		List<Double> betas = new LinkedList<Double>(); //TODO populate this list, Long's job
 		
+		// Record Pairs Data
+		CleanDataWriter writer = new CleanDataWriter(processor, 10); //10 miliseconds
+		Thread cleanDataRecordThread = new Thread(writer);
+		cleanDataRecordThread.start();
+		
+		// Start Automated Trading Strategy
 		while(true){
 			for (int i=0; i<tickers.size(); ++i){
 				for (int j=0; j<tickers.size(); ++j){

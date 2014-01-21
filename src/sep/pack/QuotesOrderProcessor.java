@@ -5,7 +5,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -22,15 +21,20 @@ import com.ib.controller.OrderStatus;
 public class QuotesOrderProcessor extends ApiController{
 	private QuotesOrderLogger records;
 	private AtomicInteger counter = new AtomicInteger(0);
+	private String dataPath;
+	private String cleanDataPath;
+	
+	public QuotesOrderProcessor(IConnectionHandler handler, ILogger inLogger, 
+								ILogger outLogger, QuotesOrderLogger r, String dP, String cdP) {
+		super(handler, inLogger, outLogger);
+		dataPath = dP;
+		cleanDataPath = cdP;
+		records = r;
+	}
 	
 	private void displayTimeNQuote(Quotes q){
 		System.out.println(q.toString());
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
-	}
-	
-	public QuotesOrderProcessor(IConnectionHandler handler, ILogger inLogger, ILogger outLogger, QuotesOrderLogger r) {
-		super(handler, inLogger, outLogger);
-		records = r;
 	}
 	
 	@Override public void tickGeneric(int reqId, int tickType, double value) {
@@ -144,10 +148,10 @@ public class QuotesOrderProcessor extends ApiController{
 	}
 	
 	private synchronized void writeNbboToFile(String ticker) throws IOException{
-		String fileName = "C:/Users/demon4000/Dropbox/data/" 
-						+ ticker + "_"
-						+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
-						+ "_SNAPSHOTS.csv";
+		String fileName = dataPath 
+							+ ticker + "_"
+							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
+							+ ".csv";
 		File quotes = new File(fileName);
 		FileWriter writer = new FileWriter(quotes, true);
 		ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
@@ -160,17 +164,38 @@ public class QuotesOrderProcessor extends ApiController{
 		writer.close();
 	}
 	
-	@SuppressWarnings("unused")
-	private synchronized void writeQuotes() throws IOException{
-		File quotes = new File("C:/cfem2013/quotes.csv");
-		FileWriter writer = new FileWriter(quotes,true);
-		for (String ticker : records.getStoredData().keySet()){
-			Vector<Quotes> qs = records.getStoredData().get(ticker);
-			for (Quotes q : qs){
-				writer.write(q.toString());
-			}
-		}
-		records.getStoredData().clear();
+	public synchronized void writeToCleanData(String ticker1, String ticker2) throws IOException{
+		String fileName = cleanDataPath 
+							+ ticker1 + "_" + ticker2 + "_"
+							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
+							+ ".csv";
+		File quotes = new File(fileName);
+		FileWriter writer = new FileWriter(quotes, true);
+		ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
+		String row = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + ",";
+		Quotes q1 = nbboMap.get(ticker1);
+		Quotes q2 = nbboMap.get(ticker2);
+		
+		if (q1.hasZero() || q2.hasZero()){ writer.close(); return; }
+		
+		row += nbboMap.get(ticker1).toStringOnlyQ();
+		row += nbboMap.get(ticker2).toStringOnlyQ();
+		row += "\n";
+		writer.write(row);
 		writer.close();
 	}
+	
+//	@SuppressWarnings("unused")
+//	private synchronized void writeQuotes() throws IOException{
+//		File quotes = new File("C:/cfem2013/quotes.csv");
+//		FileWriter writer = new FileWriter(quotes,true);
+//		for (String ticker : records.getStoredData().keySet()){
+//			Vector<Quotes> qs = records.getStoredData().get(ticker);
+//			for (Quotes q : qs){
+//				writer.write(q.toString());
+//			}
+//		}
+//		records.getStoredData().clear();
+//		writer.close();
+//	}
 }
