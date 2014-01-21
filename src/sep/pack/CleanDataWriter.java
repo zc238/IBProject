@@ -16,24 +16,26 @@ public class CleanDataWriter implements Runnable{
 	
 	@Override
 	public void run() {
-		try {
-			Thread.sleep(sleepTime);
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
-		
-		List<String> tickers = new LinkedList<String>(){
-			private static final long serialVersionUID = 1L;
-
-		{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRO");}};
-		for (int i=0; i<tickers.size(); ++i){
-			for (int j=i; j<tickers.size(); ++j){
-				if (i==j){ continue; }
-				else{
-					try {
-						processor.writeToCleanData(tickers.get(i), tickers.get(j));
-					} catch (IOException e) {
-						e.printStackTrace();
+		while(true){
+			try {
+				Thread.sleep(sleepTime);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			
+			List<String> tickers = new LinkedList<String>(){
+				private static final long serialVersionUID = 1L;
+	
+			{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRO");}};
+			for (int i=0; i<tickers.size(); ++i){
+				for (int j=i; j<tickers.size(); ++j){
+					if (i==j){ continue; }
+					else{
+						try {
+							processor.writeToCleanData(tickers.get(i), tickers.get(j));
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 			}

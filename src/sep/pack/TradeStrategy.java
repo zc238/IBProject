@@ -22,13 +22,6 @@ public class TradeStrategy{
 		private double beta;
 		private double intercept;
 		
-//		public Regression(double[] ys, double[] xs){
-//			DoubleArrayList daXs = new DoubleArrayList(xs);
-//			DoubleArrayList daYs = new DoubleArrayList(ys);
-//			beta = Descriptive.covariance(daYs, daXs) / Descriptive.covariance(daXs, daXs);
-//			intercept = Descriptive.mean(daYs) - Descriptive.mean(daXs) * beta;
-//		}
-		
 		public Regression(DoubleArrayList daYs, DoubleArrayList daXs){
 			beta = Descriptive.covariance(daYs, daXs) / Descriptive.covariance(daXs, daXs);
 			intercept = Descriptive.mean(daYs) - Descriptive.mean(daXs) * beta;
@@ -43,7 +36,7 @@ public class TradeStrategy{
 		}
 	}
 		
-	public double transCost(String ticker, double orderImba){
+	public double tCost(String ticker, double orderImba){
 		double TC = 0;
 		if (ticker == "SPY"){
 			TC = 0; // a function of orderImba
@@ -85,70 +78,70 @@ public class TradeStrategy{
 	}
 	
 	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition()); does not need to consider for paper trading, since all positions are filled immediately
-	public List<OrderContractContainer> getOrdersFromHistQuotes(String ticker1, String ticker2, 
+	public List<OrderContractContainer> getOrdersFromHistQuotes(String tickerY, String tickerX, 
 																	double slope, int tradeSize, int windowSize){
 		HashMap<String, Vector<Quotes>> histQuotes = marketdata.getStoredData();
 		double threshold = 0;
-		Quotes quote1 = marketdata.getLatestNbbo(ticker1);
-		Quotes quote2 = marketdata.getLatestNbbo(ticker2);
-		double orderImba1 = quote1.getImbalance();
-		double orderImba2 = quote2.getImbalance();
+		Quotes quotesY = marketdata.getLatestNbbo(tickerY);
+		Quotes quotesX = marketdata.getLatestNbbo(tickerX);
+		double orderImbaY = quotesY.getImbalance();
+		double orderImbaX = quotesX.getImbalance();
 		
-		double tradePrice1 = quote1.getMidPrice();
-		double tradePrice2 = quote2.getMidPrice();
+		double midPriceY = quotesY.getMidPrice();
+		double midPriceX = quotesX.getMidPrice();
 		
-		DoubleArrayList avgTick1Q = convertQuoteToDList(histQuotes.get(ticker1));
-		DoubleArrayList avgTick2Q = convertQuoteToDList(histQuotes.get(ticker2));
+		DoubleArrayList avgTickYQ = convertQuoteToDList(histQuotes.get(tickerY));
+		DoubleArrayList avgTickXQ = convertQuoteToDList(histQuotes.get(tickerX));
 		
 		double alpha = 1 - 1 / windowSize;
-		double mean1 = Descriptive.mean(avgTick1Q);
-		double mean2 = Descriptive.mean(avgTick2Q);
+		double meanY = Descriptive.mean(avgTickYQ);
+		double meanX = Descriptive.mean(avgTickXQ);
 		
-		double scaling = mean1 / mean2;
+		double scaling = meanY / meanX;
 		
 		int tradeSize1 = tradeSize;
 		int tradeSize2 = (int) (tradeSize * scaling * Math.abs(slope));
 		
-		Regression reg = new Regression(avgTick2Q, avgTick1Q);
+		Regression reg = new Regression(avgTickYQ, avgTickXQ);
 		
-		double residual = quote2.getMidPrice() - quote1.getMidPrice() * reg.getBeta() - reg.getIntercept();
+		double residual = midPriceY - midPriceX * reg.getBeta() - reg.getIntercept();
 		
-		mean1 = alpha * mean1 + (1 - alpha) * tradePrice1;
-		mean2 = alpha * mean2 + (1 - alpha) * tradePrice2;
+		meanY = alpha * meanY + (1 - alpha) * midPriceY;
+		meanX = alpha * meanX + (1 - alpha) * midPriceX;
 
 		Action action1 = null;
 		Action action2 = null;
 		
 		if (slope < 0){ // small residual: buy both; large residual: sell both;
 			// no position
-			if ((marketdata.getPosition(ticker1) == 0) && (marketdata.getPosition(ticker2) == 0)){
-				if (expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - transCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - transCost(ticker2, orderImba2))){
+			if ((marketdata.getPosition(tickerY) == 0) && (marketdata.getPosition(tickerX) == 0)){
+				if (expectedProfit(tickerY, tickerX, residual) > threshold 
+						+ tradeSize1 * (0.005 + quotesY.getAsk() - midPriceY - tCost(tickerY, orderImbaY)) 
+						+ tradeSize2 * (0.005 + quotesX.getAsk() - midPriceX - tCost(tickerX, orderImbaX))){
 					// buy both at ask
 					action1 = Action.BUY; action2 = Action.BUY;
 				}
-				else if (-expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + transCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + transCost(ticker2, orderImba2))){
+				else if (-expectedProfit(tickerY, tickerX, residual) > threshold 
+						+ tradeSize1 * (0.005 - quotesY.getBid() + midPriceY + tCost(tickerY, orderImbaY)) 
+						+ tradeSize2 * (0.005 - quotesX.getBid() + midPriceX + tCost(tickerX, orderImbaX))){
 					// sell both at bid
 					action1 = Action.SELL; action2 = Action.SELL;					
 				}
 			}
 			// long position, short only
-			else if ((marketdata.getPosition(ticker1) > 0) && (marketdata.getPosition(ticker2) > 0)){
-				if (-expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + transCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + transCost(ticker2, orderImba2))){
+			else if ((marketdata.getPosition(tickerY) > 0) && (marketdata.getPosition(tickerX) > 0)){
+				if (-expectedProfit(tickerY, tickerX, residual) > threshold 
+						+ tradeSize1 * (0.005 - quotesY.getBid() + midPriceY + tCost(tickerY, orderImbaY)) 
+						+ tradeSize2 * (0.005 - quotesX.getBid() + midPriceX + tCost(tickerX, orderImbaX))){
 					// sell at both bid
 					action1 = Action.SELL; action2 = Action.SELL;					
 				}		
 			}
 			// short position, long only
-			else if ((marketdata.getPosition(ticker1) < 0) && (marketdata.getPosition(ticker2) < 0)){
-				if (expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - transCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - transCost(ticker2, orderImba2))){
+			else if ((marketdata.getPosition(tickerY) < 0) && (marketdata.getPosition(tickerX) < 0)){
+				if (expectedProfit(tickerY, tickerX, residual) > threshold 
+						+ tradeSize1 * (0.005 + quotesY.getAsk() - midPriceY - tCost(tickerY, orderImbaY)) 
+						+ tradeSize2 * (0.005 + quotesX.getAsk() - midPriceX - tCost(tickerX, orderImbaX))){
 					// buy at both ask
 					action1 = Action.BUY; action2 = Action.BUY;
 				}
@@ -156,41 +149,41 @@ public class TradeStrategy{
 		}
 		else if (slope > 0){ // small residual: buy ticker1 and sell ticker2; large residual: sell ticker1 and buy ticker2;
 			// no position
-			if ((marketdata.getPosition(ticker1) == 0) && (marketdata.getPosition(ticker2) == 0)){
-				if (expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - transCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + transCost(ticker2, orderImba2))){
+			if ((marketdata.getPosition(tickerY) == 0) && (marketdata.getPosition(tickerX) == 0)){
+				if (expectedProfit(tickerY, tickerX, residual) > threshold 
+						+ tradeSize1 * (0.005 + quotesY.getAsk() - midPriceY - tCost(tickerY, orderImbaY)) 
+						+ tradeSize2 * (0.005 - quotesX.getBid() + midPriceX + tCost(tickerX, orderImbaX))){
 					// buy ticker1 at ask; sell ticker2 at bid
 					action1 = Action.BUY; action2 = Action.SELL;
 				}
-				else if (-expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + transCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - transCost(ticker2, orderImba2))){
+				else if (-expectedProfit(tickerY, tickerX, residual) > threshold 
+						+ tradeSize1 * (0.005 - quotesY.getBid() + midPriceY + tCost(tickerY, orderImbaY)) 
+						+ tradeSize2 * (0.005 + quotesX.getAsk() - midPriceX - tCost(tickerX, orderImbaX))){
 					// sell ticker1 at bid; buy ticker2 at ask
 					action1 = Action.SELL; action2 = Action.BUY;					
 				}
 			}
 			// ticker1 long position, sell ticker1 and buy ticker2 only
-			else if ((marketdata.getPosition(ticker1) > 0) && (marketdata.getPosition(ticker2) < 0)){
-				if (-expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 - quote1.getBid() + tradePrice1 + transCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 + quote2.getAsk() - tradePrice2 - transCost(ticker2, orderImba2))){
+			else if ((marketdata.getPosition(tickerY) > 0) && (marketdata.getPosition(tickerX) < 0)){
+				if (-expectedProfit(tickerY, tickerX, residual) > threshold 
+						+ tradeSize1 * (0.005 - quotesY.getBid() + midPriceY + tCost(tickerY, orderImbaY)) 
+						+ tradeSize2 * (0.005 + quotesX.getAsk() - midPriceX - tCost(tickerX, orderImbaX))){
 					// sell ticker1 at bid; buy ticker2 at ask
 					action1 = Action.SELL; action2 = Action.BUY;
 				}		
 			}
 			// ticker1 short position, buy ticker1 and sell ticker2 only
-			else if ((marketdata.getPosition(ticker1) < 0) && (marketdata.getPosition(ticker2) < 0)){
-				if (expectedProfit(ticker1, ticker2, residual) > threshold 
-						+ tradeSize1 * (0.005 + quote1.getAsk() - tradePrice1 - transCost(ticker1, orderImba1)) 
-						+ tradeSize2 * (0.005 - quote2.getBid() + tradePrice2 + transCost(ticker2, orderImba2))){
+			else if ((marketdata.getPosition(tickerY) < 0) && (marketdata.getPosition(tickerX) < 0)){
+				if (expectedProfit(tickerY, tickerX, residual) > threshold 
+						+ tradeSize1 * (0.005 + quotesY.getAsk() - midPriceY - tCost(tickerY, orderImbaY)) 
+						+ tradeSize2 * (0.005 - quotesX.getBid() + midPriceX + tCost(tickerX, orderImbaX))){
 					// buy ticker1 at ask; sell ticker2 at bid
 					action1 = Action.BUY; action2 = Action.SELL;
 				}
 			}
 		}//end elseif
 		
-		return getOrderFromIntel(ticker1, ticker2, Math.abs(tradeSize1), Math.abs(tradeSize2), action1, action2);
+		return getOrderFromIntel(tickerY, tickerX, Math.abs(tradeSize1), Math.abs(tradeSize2), action1, action2);
 	}
 	
 	private List<OrderContractContainer> getOrderFromIntel(String ticker1, String ticker2,

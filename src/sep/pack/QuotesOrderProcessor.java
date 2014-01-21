@@ -168,13 +168,13 @@ public class QuotesOrderProcessor extends ApiController{
 		String fileName = cleanDataPath 
 							+ ticker1 + "_" + ticker2 + "_"
 							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
-							+ ".csv";
+							+ "_ZC.csv";
 		File quotes = new File(fileName);
 		FileWriter writer = new FileWriter(quotes, true);
 		ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
 		String row = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + ",";
-		Quotes q1 = nbboMap.get(ticker1);
-		Quotes q2 = nbboMap.get(ticker2);
+		Quotes q1 = records.getLatestNbbo(ticker1);
+		Quotes q2 = records.getLatestNbbo(ticker2);
 		
 		if (q1.hasZero() || q2.hasZero()){ writer.close(); return; }
 		

@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class QuotesOrderLogger { 
 	private ConcurrentHashMap<String, Quotes> latestNbbo = new ConcurrentHashMap<String, Quotes>();
+		
 	private HashMap<String, Vector<Quotes>> storedData = new HashMap<String, Vector<Quotes>>();
 	private HashMap<String, Integer> currentPositions = new HashMap<String, Integer>();
 	private HashMap<String, Integer> submittedPositions = new HashMap<String, Integer>();

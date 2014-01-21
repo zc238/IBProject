@@ -6,6 +6,7 @@ package sep.pack;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import com.ib.controller.ApiController.IConnectionHandler;
 
@@ -74,24 +75,24 @@ public class MyDemo {
 		cleanDataRecordThread.start();
 		
 		// Start Automated Trading Strategy
-		while(true){
-			for (int i=0; i<tickers.size(); ++i){
-				for (int j=0; j<tickers.size(); ++j){
-					double slope = betas.get(i+j);
-					int tradeSize = 100;
-					int windowSize = 1000;
-					List<OrderContractContainer> generatedOrders = 
-							strategy.getOrdersFromHistQuotes(tickers.get(i), tickers.get(j), slope, tradeSize, windowSize);
-					if (generatedOrders.size() == 0){
-						Thread.sleep(500);
-					}else{
-						for (OrderContractContainer c : generatedOrders){
-							retriever.sendOrder(c);
-						}
-					}
-				}
-			}
-		}
+//		while(true){
+//			for (int i=0; i<tickers.size(); ++i){
+//				for (int j=i; j<tickers.size(); ++j){
+//					double slope = new Random().nextDouble();//betas.get(i+j);
+//					int tradeSize = 100;
+//					int windowSize = 1000;
+//					List<OrderContractContainer> generatedOrders = 
+//							strategy.getOrdersFromHistQuotes(tickers.get(i), tickers.get(j), slope, tradeSize, windowSize);
+//					if (generatedOrders.size() == 0){
+//						Thread.sleep(500);
+//					}else{
+//						for (OrderContractContainer c : generatedOrders){
+//							retriever.sendOrder(c);
+//						}
+//					}
+//				}
+//			}
+//		}
 		
 //		retriever.sendOrder("SPY", 10000, Action.BUY);
 //		retriever.sendOrder("SPY", 100, Action.BUY, 130);
