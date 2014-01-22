@@ -58,7 +58,7 @@ public class Quotes{
 	}
 	
 	public double getMidPrice(){
-		return (bid + ask) / 2;
+		return (bid + ask) / (2.0);
 	}
 	
 	public void setBidSize(int bidSize) {
@@ -90,5 +90,9 @@ public class Quotes{
 	public String toString(){
 		
 		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(localTimeStamp) + "," + ask + "," + askSize + "," + bid + "," + bidSize + ">\n";
+	}
+	
+	public void updateTimeStamp(){
+		localTimeStamp = new Date();
 	}
 }

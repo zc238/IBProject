@@ -48,8 +48,12 @@ public class QuotesOrderProcessor extends ApiController{
 		if (tickType != 0 && tickType != 3){ return; }
 		Quotes lastNbbo = records.getLatestNbbo(QuotesOrderController.REQ_TO_TICKER.get(reqId));
 		switch(tickType){
-			case 0: lastNbbo.setBidSize(size); break;
-			case 3: lastNbbo.setAskSize(size); break;
+			case 0: lastNbbo.setBidSize(size); 
+					lastNbbo.updateTimeStamp();
+					break;
+			case 3: lastNbbo.setAskSize(size); 
+					lastNbbo.updateTimeStamp();
+					break;
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);
@@ -63,7 +67,7 @@ public class QuotesOrderProcessor extends ApiController{
 	}
 
 	@Override public void tickString(int reqId, int tickType, String value) {
-		System.out.println("String Update for Req ID: " + reqId + "; tickType: " + tickType + "; value: " + value);
+		//System.out.println("String Update for Req ID: " + reqId + "; tickType: " + tickType + "; value: " + value);
 	}
 	
 	private void chainWrite(String ticker){
@@ -84,8 +88,11 @@ public class QuotesOrderProcessor extends ApiController{
 		if (tickType != 1 && tickType != 2){ return; }
 		Quotes lastNbbo = records.getLatestNbbo(QuotesOrderController.REQ_TO_TICKER.get(reqId));
 		switch(tickType){
-			case 1: lastNbbo.setBid(price); break;
-			case 2: lastNbbo.setAsk(price); break;
+			case 1: lastNbbo.setBid(price); 
+					lastNbbo.updateTimeStamp(); break;
+			case 2: lastNbbo.setAsk(price); 
+					lastNbbo.updateTimeStamp();
+					break;
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);

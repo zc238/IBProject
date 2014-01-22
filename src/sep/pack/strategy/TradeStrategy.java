@@ -1,10 +1,11 @@
 package sep.pack.strategy;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
 import sep.pack.OrderContractContainer;
 import sep.pack.OrderUtility;
@@ -58,8 +59,8 @@ public class TradeStrategy{
 //		}
 //	}
 	
-	private Vector<Quotes> trimQuotes(Vector<Quotes> quotes, boolean usePreviousWindow, int windowSize){
-		Vector<Quotes> l = new Vector<Quotes>();
+	private List<Quotes> trimQuotes(List<Quotes> quotes, boolean usePreviousWindow, int windowSize){
+		List<Quotes> l = new ArrayList<Quotes>();
 		if (usePreviousWindow){
 			for (int i=quotes.size()-2*windowSize; i < quotes.size()-windowSize; ++i){
 				l.add(quotes.get(i));
@@ -74,7 +75,7 @@ public class TradeStrategy{
 	}
 	
 	//Must ensure quotes has at least 2*windowSize elements
-	private DoubleArrayList convertQuoteToDList(Vector<Quotes> quotes){
+	private DoubleArrayList convertQuoteToDList(List<Quotes> quotes){
 		DoubleArrayList l = new DoubleArrayList();
 		for (Quotes q : quotes){
 			l.add(q.getMidPrice());
@@ -82,8 +83,8 @@ public class TradeStrategy{
 		return l;
 	}
 	
-	private HashMap<String, Vector<Quotes>> getHistoricalQuotes(String tickerX, String tickerY, int windowSize) throws InterruptedException{
-		HashMap<String, Vector<Quotes>> histQuotes = marketdata.getStoredData();
+	private ConcurrentHashMap<String, List<Quotes>> getHistoricalQuotes(String tickerX, String tickerY, int windowSize) throws InterruptedException{
+		ConcurrentHashMap<String, List<Quotes>> histQuotes = marketdata.getStoredData();
 		while (histQuotes.get(tickerY)==null || histQuotes.get(tickerX)==null 
 				|| histQuotes.get(tickerY).size() < windowSize*2 
 				|| histQuotes.get(tickerX).size() < windowSize*2){ //wait for more quotes
@@ -93,7 +94,7 @@ public class TradeStrategy{
 		return histQuotes;
 	}
 	
-	private double getLatestResidual(Vector<Quotes> xs, Vector<Quotes> ys, double slope){
+	private double getLatestResidual(List<Quotes> xs, List<Quotes> ys, double slope){
 		DoubleArrayList avgTickYQ = convertQuoteToDList(xs);
 		DoubleArrayList avgTickXQ = convertQuoteToDList(ys);
 		
@@ -115,7 +116,7 @@ public class TradeStrategy{
 																		int tradeSize, int windowSize) throws InterruptedException{
 		
 		double slope = (tickerLeverage.get(tickerY) + 0.0) / (tickerLeverage.get(tickerX) + 0.0);
-		HashMap<String, Vector<Quotes>> histQuotes = getHistoricalQuotes(tickerX, tickerY, windowSize);
+		ConcurrentHashMap<String, List<Quotes>> histQuotes = getHistoricalQuotes(tickerX, tickerY, windowSize);
 		
 		double threshold = 0;
 		Quotes quotesY = marketdata.getLatestNbbo(tickerY);

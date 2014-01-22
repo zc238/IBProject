@@ -15,6 +15,12 @@ public class ExpectedProfit {
 	
 	public double getExpectedProf(Pair<String> tickerPair, double residual){
 		Pair<Double> coeffs = regressionCoeffs.get(tickerPair);
+		if (coeffs == null){
+			coeffs = regressionCoeffs.get(new Pair<String>(tickerPair.getB(), tickerPair.getA()));
+		}
+		if (coeffs == null){
+			return 0.0;
+		}
 		return coeffs.getA() * residual + coeffs.getB();
 	}
 }

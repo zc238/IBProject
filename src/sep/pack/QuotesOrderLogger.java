@@ -1,18 +1,19 @@
 package sep.pack;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class QuotesOrderLogger { 
 	private ConcurrentHashMap<String, Quotes> latestNbbo = new ConcurrentHashMap<String, Quotes>();
 		
-	private HashMap<String, Vector<Quotes>> storedData = new HashMap<String, Vector<Quotes>>();
-	private HashMap<String, Integer> currentPositions = new HashMap<String, Integer>();
-	private HashMap<String, Integer> submittedPositions = new HashMap<String, Integer>();
+	private ConcurrentHashMap<String, List<Quotes>> storedData = new ConcurrentHashMap<String, List<Quotes>>();
+	private ConcurrentHashMap<String, Integer> currentPositions = new ConcurrentHashMap<String, Integer>();
+	private ConcurrentHashMap<String, Integer> submittedPositions = new ConcurrentHashMap<String, Integer>();
 	private Set<Integer> activeOrders = new HashSet<Integer>();
 	public static AtomicBoolean RECORD_DATA = new AtomicBoolean(true);
 	
@@ -60,26 +61,31 @@ public class QuotesOrderLogger {
 		}
 	}
 	
-	public HashMap<String, Vector<Quotes>> getStoredData() {
+	public synchronized ConcurrentHashMap<String, List<Quotes>> getStoredData() {
 		return storedData;
 	}
 	
-	public void addQuotesToRecords(String ticker, Quotes q){
+	public synchronized void addQuotesToRecords(String ticker, Quotes q){
 		if (storedData.get(ticker) == null){
-			storedData.put(ticker, new Vector<Quotes>());
+			storedData.put(ticker, Collections.synchronizedList(new ArrayList<Quotes>()));
 		}
+//		System.out.println("PREVIOUS SIZE: " + storedData.get(ticker).size());
+//		if (storedData.get(ticker).size()>2){
+//			System.out.println("PREVIOUS QUOTE: " + storedData.get(ticker).get(storedData.get(ticker).size()-2).getMidPrice());
+//		}
+//		System.out.println("ADD " + ticker + ", for mid price " + q.getMidPrice());
 		storedData.get(ticker).add(q);
 	}
 	
-	public ConcurrentHashMap<String, Quotes> getNbboMap(){
+	public synchronized ConcurrentHashMap<String, Quotes> getNbboMap(){
 		return latestNbbo;
 	}
 	
-	public void updateLatestNbbo(String ticker, Quotes q){
+	public synchronized void updateLatestNbbo(String ticker, Quotes q){
 		latestNbbo.put(ticker, q);
 	}
 	
-	public Quotes getLatestNbbo(String ticker){
+	public synchronized Quotes getLatestNbbo(String ticker){
 		if (!latestNbbo.containsKey(ticker)){
 			latestNbbo.put(ticker, new Quotes());
 		}
