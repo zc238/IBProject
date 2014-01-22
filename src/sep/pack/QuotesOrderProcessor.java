@@ -51,14 +51,12 @@ public class QuotesOrderProcessor extends ApiController{
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);
-		records.addQuotesToRecords(ticker, lastNbbo);
+		//records.addQuotesToRecords(ticker, lastNbbo); //#Quote
 		counter.addAndGet(1);
-		try{
+		if (QuotesOrderLogger.RECORD_DATA.get()){
 			writeNbboToFile(ticker);
-		}catch(IOException ex){
-			System.out.println(ex.toString());
+			displayTimeNQuote(lastNbbo);
 		}
-		displayTimeNQuote(lastNbbo);
 	}
 
 	@Override public void tickString(int reqId, int tickType, String value) {
@@ -77,17 +75,10 @@ public class QuotesOrderProcessor extends ApiController{
 		records.updateLatestNbbo(ticker, lastNbbo);
 		records.addQuotesToRecords(ticker, lastNbbo);
 		counter.addAndGet(1);
-		try{
+		if (QuotesOrderLogger.RECORD_DATA.get()){
 			writeNbboToFile(ticker);
-		}catch(IOException ex){
-			System.out.println(ex.toString());
+			displayTimeNQuote(lastNbbo);
 		}
-//		if (counter.get() > 10000){
-//			try{
-//				writeQuotes();
-//			}catch(IOException ex){}
-//		}
-		displayTimeNQuote(lastNbbo);
 	}
 	
 	@Override public void nextValidId(int orderId) {
@@ -147,21 +138,25 @@ public class QuotesOrderProcessor extends ApiController{
 		System.out.println("Order ID: " + orderId + ". Error Message: " + errorMsg);
 	}
 	
-	private synchronized void writeNbboToFile(String ticker) throws IOException{
-		String fileName = dataPath 
-							+ ticker + "_"
-							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
-							+ ".csv";
-		File quotes = new File(fileName);
-		FileWriter writer = new FileWriter(quotes, true);
-		ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
-		String row = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + ",";
-		Quotes q = nbboMap.get(ticker);
-		if (q.hasZero()){ writer.close(); return; }
-		row += nbboMap.get(ticker).toStringOnlyQ();
-		row += "\n";
-		writer.write(row);
-		writer.close();
+	private synchronized void writeNbboToFile(String ticker){
+		try{
+			String fileName = dataPath 
+								+ ticker + "_"
+								+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
+								+ ".csv";
+			File quotes = new File(fileName);
+			FileWriter writer = new FileWriter(quotes, true);
+			ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
+			String row = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + ",";
+			Quotes q = nbboMap.get(ticker);
+			if (q.hasZero()){ writer.close(); return; }
+			row += nbboMap.get(ticker).toStringOnlyQ();
+			row += "\n";
+			writer.write(row);
+			writer.close();
+		}catch(IOException e){
+			e.printStackTrace();
+		}
 	}
 	
 	public synchronized void writeToCleanData(String ticker1, String ticker2) throws IOException{
@@ -184,18 +179,4 @@ public class QuotesOrderProcessor extends ApiController{
 		writer.write(row);
 		writer.close();
 	}
-	
-//	@SuppressWarnings("unused")
-//	private synchronized void writeQuotes() throws IOException{
-//		File quotes = new File("C:/cfem2013/quotes.csv");
-//		FileWriter writer = new FileWriter(quotes,true);
-//		for (String ticker : records.getStoredData().keySet()){
-//			Vector<Quotes> qs = records.getStoredData().get(ticker);
-//			for (Quotes q : qs){
-//				writer.write(q.toString());
-//			}
-//		}
-//		records.getStoredData().clear();
-//		writer.close();
-//	}
 }

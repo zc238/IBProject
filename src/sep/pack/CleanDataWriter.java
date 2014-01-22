@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import sep.pack.data.TICKER;
+
 public class CleanDataWriter implements Runnable{
 
 	private QuotesOrderProcessor processor;
@@ -26,7 +28,7 @@ public class CleanDataWriter implements Runnable{
 			List<String> tickers = new LinkedList<String>(){
 				private static final long serialVersionUID = 1L;
 	
-			{add("SPY"); add("SH"); add("SSO"); add("SDS"); add("SPXU"); add("UPRO");}};
+			{add(TICKER.SPY); add(TICKER.SH); add(TICKER.SSO); add(TICKER.SDS); add(TICKER.SPX); add(TICKER.UPR);}};
 			for (int i=0; i<tickers.size(); ++i){
 				for (int j=i; j<tickers.size(); ++j){
 					if (i==j){ continue; }

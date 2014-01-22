@@ -1,7 +1,5 @@
 package sep.pack;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -30,10 +28,12 @@ public class QuotesOrderController{
 		connection.eConnect("127.0.0.1",7496,0);
 	}
 	
-	public void reqMktData(List<String> tickers){
+	public void reqMktData(List<String> tickers, boolean writeTofile){
 		if (!connection.isConnected()){
 			makeconnection();
 		}
+
+		QuotesOrderLogger.RECORD_DATA.set(writeTofile);
 		for (int i=0; i<tickers.size(); ++i){
 			String ticker = tickers.get(i);
 			QuotesOrderController.REQ_TO_TICKER.put(i, ticker);
@@ -41,7 +41,7 @@ public class QuotesOrderController{
 		}
 		
 		System.out.println("Quotes Request Sent");
-		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+		OrderUtility.displayTime();
 	}
 	
 	public void sendOrder(String ticker, int quantity, Action action, double limitPrice) throws InterruptedException{

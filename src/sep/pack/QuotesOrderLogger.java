@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class QuotesOrderLogger { 
 	private ConcurrentHashMap<String, Quotes> latestNbbo = new ConcurrentHashMap<String, Quotes>();
@@ -13,6 +14,7 @@ public class QuotesOrderLogger {
 	private HashMap<String, Integer> currentPositions = new HashMap<String, Integer>();
 	private HashMap<String, Integer> submittedPositions = new HashMap<String, Integer>();
 	private Set<Integer> activeOrders = new HashSet<Integer>();
+	public static AtomicBoolean RECORD_DATA = new AtomicBoolean(true);
 	
 	public void addActiveOrder(int orderId){
 		activeOrders.add(orderId);
