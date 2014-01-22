@@ -101,12 +101,13 @@ public class TradeStrategy{
 		double meanX = Descriptive.mean(avgTickXQ);
 		
 		double scaling = meanY / meanX;
-		Vector<Double> residuals = new Vector<Double>();
+		DoubleArrayList resYs = new DoubleArrayList();
 		for (int i=0; i<ys.size(); ++i){
-			double r = avgTickYQ.get(i) - Math.abs(slope)*avgTickXQ.get(i)*scaling - meanY;
-			residuals.add(r);
+			double y = avgTickYQ.get(i) - slope*avgTickXQ.get(i)*scaling;
+			resYs.add(y);
 		}
-		return residuals.get(ys.size()-1);
+		
+		return resYs.get(ys.size()-1) - Descriptive.mean(resYs);
 	}
 	
 	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition()); does not need to consider for paper trading, since all positions are filled immediately
@@ -151,7 +152,7 @@ public class TradeStrategy{
 		Action action1 = null;
 		Action action2 = null;
 		
-		double expectedReturn = expProfit.getExpectedProf(new Pair<String>(tickerY, tickerX), residual);
+		double expectedReturn = expProfit.getExpectedProf(new Pair<String>(tickerX, tickerY), residual);
 		if (slope < 0){ // small residual: buy both; large residual: sell both;
 			// no position
 			if ((marketdata.getPosition(tickerY) == 0) && (marketdata.getPosition(tickerX) == 0)){
