@@ -17,10 +17,6 @@ public class MyDemo {
 	public static void main(String[] args) throws InterruptedException {
 		
 		// Wirings
-		List<String> tickers = new LinkedList<String>(){
-			private static final long serialVersionUID = 1526140478688889373L;
-
-		{add(TICKER.SPY); add(TICKER.SH); add(TICKER.SSO); add(TICKER.SDS); add(TICKER.SPX); add(TICKER.UPR);}};
 		MyLogger m_inLogger = new MyLogger();
 		LazyHandler handler = new LazyHandler();
 		QuotesOrderLogger logger = new QuotesOrderLogger();
@@ -31,6 +27,11 @@ public class MyDemo {
 		
 		QuotesOrderController retriever = new QuotesOrderController(handler, processor, logger);
 		
+		// Retrieve Market Data
+		retriever.makeconnection();
+		retriever.reqMktData(TICKER.TICKERS, true);
+		
+		/*
 		CubicTransCost transCost = new CubicTransCost();
 		transCost.insertCost(TICKER.SPY, new Quadralet(0.0148, -0.0221, 0.0139, -0.0033));
 		transCost.insertCost(TICKER.SH, new Quadralet(0.0216, -0.0323, 0.0161, -0.0026));
@@ -51,24 +52,15 @@ public class MyDemo {
 		expProfit.insertPair(new Pair<String>("SDS", "SPX"), -94.313, 0.0082);
 		
 		TradeStrategy strategy = new TradeStrategy(logger, transCost, expProfit);
-		
-		// Retrieve Market Data
-		retriever.makeconnection();
-		retriever.reqMktData(tickers, false);
-	
-		// Record Pairs Data
-//		CleanDataWriter writer = new CleanDataWriter(processor, 10); //10 miliseconds
-//		Thread cleanDataRecordThread = new Thread(writer);
-//		cleanDataRecordThread.start();
-		
+				
 		// Start Automated Trading Strategy
 		while(true){
-			for (int i=0; i<tickers.size(); ++i){
-				for (int j=i; j<tickers.size(); ++j){
+			for (int i=0; i<TICKER.TICKERS.size(); ++i){
+				for (int j=i; j<TICKER.TICKERS.size(); ++j){
 					int tradeSize = 100;
 					int windowSize = 20;
 					List<OrderContractContainer> generatedOrders = 
-							strategy.getOrdersFromHistQuotes(tickers.get(i), tickers.get(j), tradeSize, windowSize);
+							strategy.getOrdersFromHistQuotes(TICKER.TICKERS.get(i), TICKER.TICKERS.get(j), tradeSize, windowSize);
 					
 					if (generatedOrders.size() == 0){ //Nothing to submit, wait 1 second. 
 						Thread.sleep(1000); //right approach?
@@ -80,7 +72,7 @@ public class MyDemo {
 				}
 			}
 		}
-		
+		*/
 //		retriever.sendOrder("SPY", 10000, Action.BUY);
 //		retriever.sendOrder("SPY", 100, Action.BUY, 130);
 	}

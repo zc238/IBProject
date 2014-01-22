@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import sep.pack.data.TICKER;
+
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
@@ -55,12 +57,26 @@ public class QuotesOrderProcessor extends ApiController{
 		counter.addAndGet(1);
 		if (QuotesOrderLogger.RECORD_DATA.get()){
 			writeNbboToFile(ticker);
+			chainWrite(ticker);
 			displayTimeNQuote(lastNbbo);
 		}
 	}
 
 	@Override public void tickString(int reqId, int tickType, String value) {
 		System.out.println("String Update for Req ID: " + reqId + "; tickType: " + tickType + "; value: " + value);
+	}
+	
+	private void chainWrite(String ticker){
+		for (int j=0; j<TICKER.TICKERS.size(); ++j){
+			if (ticker.equals(TICKER.TICKERS.get(j))){ continue; }
+			else{
+				try {
+					writeToCleanData(ticker, TICKER.TICKERS.get(j));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 	
 	@Override public void tickPrice(int reqId, int tickType, double price, int canAutoExecute) {
@@ -77,6 +93,7 @@ public class QuotesOrderProcessor extends ApiController{
 		counter.addAndGet(1);
 		if (QuotesOrderLogger.RECORD_DATA.get()){
 			writeNbboToFile(ticker);
+			chainWrite(ticker);
 			displayTimeNQuote(lastNbbo);
 		}
 	}
@@ -163,7 +180,7 @@ public class QuotesOrderProcessor extends ApiController{
 		String fileName = cleanDataPath 
 							+ ticker1 + "_" + ticker2 + "_"
 							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
-							+ "_ZC.csv";
+							+ ".csv";
 		File quotes = new File(fileName);
 		FileWriter writer = new FileWriter(quotes, true);
 		ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
