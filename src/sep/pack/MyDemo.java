@@ -3,14 +3,13 @@
 
 package sep.pack;
 
-import java.util.List;
-
 import sep.pack.data.Pair;
 import sep.pack.data.Quadralet;
 import sep.pack.data.TICKER;
 import sep.pack.strategy.CubicTransCost;
 import sep.pack.strategy.ExpectedProfit;
 import sep.pack.strategy.TradeStrategy;
+import sep.pack.strategy.TradeStrategyTask;
 
 public class MyDemo {
 	public static void main(String[] args) throws InterruptedException {		
@@ -23,11 +22,11 @@ public class MyDemo {
 																	"C:/Users/demon4000/Dropbox/data/", 
 																	"C:/Users/demon4000/Dropbox/cleanData/");
 		
-		QuotesOrderController retriever = new QuotesOrderController(handler, processor, logger);
+		QuotesOrderController controller = new QuotesOrderController(handler, processor, logger);
 		
 		// Retrieve Market Data
-		retriever.makeconnection();
-		retriever.reqMktData(TICKER.TICKERS, false);
+		controller.makeconnection();
+		controller.reqMktData(TICKER.TICKERS, false);
 		
 		CubicTransCost transCost = new CubicTransCost();
 		transCost.insertCost(TICKER.SPY, new Quadralet(0.0148, -0.0221, 0.0139, -0.0033));
@@ -54,7 +53,7 @@ public class MyDemo {
 		expProfit.insertPair(new Pair<String>(TICKER.SDS, TICKER.SPX), -0.94313, 0);
 		expProfit.insertPair(new Pair<String>(TICKER.UPR, TICKER.SPX), -0.94313, 0);
 		
-		TradeStrategy strategy = new TradeStrategy(logger, transCost, expProfit);
+		
 				
 		// Start Automated Trading Strategy
 		while(true){
@@ -63,16 +62,10 @@ public class MyDemo {
 					int tradeSize = 100;
 					int windowSize = 5;
 					if(i==j){ continue; }
-					List<OrderContractContainer> generatedOrders = 
-							strategy.getOrdersFromHistQuotes(TICKER.TICKERS.get(i), TICKER.TICKERS.get(j), tradeSize, windowSize);
-					
-					if (generatedOrders.size() == 0){ //Nothing to submit, wait 1 second. 
-						Thread.sleep(100); //right approach?
-					}else{
-						for (OrderContractContainer c : generatedOrders){
-							retriever.sendOrder(c);
-						}
-					}
+					Runnable task = new TradeStrategyTask(new TradeStrategy(logger, transCost, expProfit, 
+															TICKER.TICKERS.get(i), TICKER.TICKERS.get(j), tradeSize, windowSize), controller);
+					Thread t = new Thread(task);
+					t.start();
 				}
 			}
 		}

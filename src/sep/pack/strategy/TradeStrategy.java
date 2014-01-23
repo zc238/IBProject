@@ -18,12 +18,17 @@ import cern.jet.stat.Descriptive;
 
 import com.ib.controller.Types.Action;
 
-public class TradeStrategy{
+public class TradeStrategy implements Runnable{
 	
 	private QuotesOrderLogger marketdata;
 	private CubicTransCost transCost;
 	private ExpectedProfit expProfit;
 	private final double IB_TRANS_COST = 0.005;
+	private String tickerX;
+	private String tickerY;
+	private int windowSize;
+	private int tradeSize;
+	
 	public final Map<String, Integer> tickerLeverage;
 	{
 		tickerLeverage = new HashMap<String, Integer>();
@@ -35,29 +40,16 @@ public class TradeStrategy{
 		tickerLeverage.put(TICKER.UPR, 3);
 	}
 	
-	public TradeStrategy(QuotesOrderLogger md, CubicTransCost tc, ExpectedProfit profit){
+	public TradeStrategy(QuotesOrderLogger md, CubicTransCost tc, 
+							ExpectedProfit profit, String tX, String tY, int wS, int tS){
 		marketdata = md;
 		transCost = tc;
 		expProfit = profit;
+		tickerX = tX;
+		tickerY = tY;
+		windowSize = wS;
+		tradeSize = tS;
 	}
-	
-//	private class Regression{
-//		private double beta;
-//		private double intercept;
-//		
-//		public Regression(DoubleArrayList daYs, DoubleArrayList daXs){
-//			beta = Descriptive.covariance(daYs, daXs) / Descriptive.covariance(daXs, daXs);
-//			intercept = Descriptive.mean(daYs) - Descriptive.mean(daXs) * beta;
-//		}
-//		
-//		public double getBeta() {
-//			return beta;
-//		}
-//		
-//		public double getIntercept() {
-//			return intercept;
-//		}
-//	}
 	
 	private List<Quotes> trimQuotes(List<Quotes> quotes, boolean usePreviousWindow, int windowSize){
 		List<Quotes> l = new ArrayList<Quotes>();
@@ -83,7 +75,7 @@ public class TradeStrategy{
 		return l;
 	}
 	
-	private ConcurrentHashMap<String, List<Quotes>> getHistoricalQuotes(String tickerX, String tickerY, int windowSize) throws InterruptedException{
+	private ConcurrentHashMap<String, List<Quotes>> getHistoricalQuotes(String tickerX, String tickerY) throws InterruptedException{
 		ConcurrentHashMap<String, List<Quotes>> histQuotes = marketdata.getStoredData();
 		while (histQuotes.get(tickerY)==null || histQuotes.get(tickerX)==null 
 				|| histQuotes.get(tickerY).size() < windowSize*2 
@@ -112,11 +104,10 @@ public class TradeStrategy{
 	}
 	
 	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition()); does not need to consider for paper trading, since all positions are filled immediately
-	public List<OrderContractContainer> getOrdersFromHistQuotes(String tickerY, String tickerX, 
-																		int tradeSize, int windowSize) throws InterruptedException{
+	public List<OrderContractContainer> getOrdersFromHistQuotes() throws InterruptedException{
 		
 		double slope = (tickerLeverage.get(tickerY) + 0.0) / (tickerLeverage.get(tickerX) + 0.0);
-		ConcurrentHashMap<String, List<Quotes>> histQuotes = getHistoricalQuotes(tickerX, tickerY, windowSize);
+		ConcurrentHashMap<String, List<Quotes>> histQuotes = getHistoricalQuotes(tickerX, tickerY);
 		
 		double threshold = 0;
 		Quotes quotesY = marketdata.getLatestNbbo(tickerY);
@@ -243,5 +234,11 @@ public class TradeStrategy{
 																OrderUtility.createNewOrder(size2, action2));
 		orders.add(oc2);
 		return orders;
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
 	}
 }

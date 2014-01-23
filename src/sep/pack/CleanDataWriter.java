@@ -1,8 +1,6 @@
 package sep.pack;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 
 import sep.pack.data.TICKER;
 
@@ -25,16 +23,12 @@ public class CleanDataWriter implements Runnable{
 				e1.printStackTrace();
 			}
 			
-			List<String> tickers = new LinkedList<String>(){
-				private static final long serialVersionUID = 1L;
-	
-			{add(TICKER.SPY); add(TICKER.SH); add(TICKER.SSO); add(TICKER.SDS); add(TICKER.SPX); add(TICKER.UPR);}};
-			for (int i=0; i<tickers.size(); ++i){
-				for (int j=i; j<tickers.size(); ++j){
+			for (int i=0; i<TICKER.TICKERS.size(); ++i){
+				for (int j=i; j<TICKER.TICKERS.size(); ++j){
 					if (i==j){ continue; }
 					else{
 						try {
-							processor.writeToCleanData(tickers.get(i), tickers.get(j));
+							processor.writeToCleanData(TICKER.TICKERS.get(i), TICKER.TICKERS.get(j));
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
