@@ -56,17 +56,17 @@ public class MyDemo {
 		
 				
 		// Start Automated Trading Strategy
-		while(true){
-			for (int i=0; i<TICKER.TICKERS.size(); ++i){
-				for (int j=i; j<TICKER.TICKERS.size(); ++j){
-					int tradeSize = 100;
-					int windowSize = 5;
-					if(i==j){ continue; }
-					Runnable task = new TradeStrategyTask(new TradeStrategy(logger, transCost, expProfit, 
-															TICKER.TICKERS.get(i), TICKER.TICKERS.get(j), tradeSize, windowSize), controller);
-					Thread t = new Thread(task);
-					t.start();
-				}
+
+		for (int i=0; i<TICKER.TICKERS.size(); ++i){
+			for (int j=i; j<TICKER.TICKERS.size(); ++j){
+				int tradeSize = 100;
+				int windowSize = 5;
+				if(i==j){ continue; }
+				//This is necessary because you want different strategy pairs to independently perform, so one strategy blocking does not stop the process
+				Runnable task = new TradeStrategyTask(new TradeStrategy(logger, transCost, expProfit, 
+														TICKER.TICKERS.get(i), TICKER.TICKERS.get(j), windowSize, tradeSize), controller);
+				Thread t = new Thread(task);
+				t.start();
 			}
 		}
 		

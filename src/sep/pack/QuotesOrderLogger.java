@@ -16,6 +16,7 @@ public class QuotesOrderLogger {
 	private ConcurrentHashMap<String, Integer> submittedPositions = new ConcurrentHashMap<String, Integer>();
 	private Set<Integer> activeOrders = new HashSet<Integer>();
 	public static AtomicBoolean RECORD_DATA = new AtomicBoolean(true);
+	public static final int quotesLimit = 1000;
 	
 	public void addActiveOrder(int orderId){
 		activeOrders.add(orderId);
@@ -69,10 +70,9 @@ public class QuotesOrderLogger {
 		if (storedData.get(ticker) == null){
 			storedData.put(ticker, Collections.synchronizedList(new ArrayList<Quotes>()));
 		}
-//		System.out.println("PREVIOUS SIZE: " + storedData.get(ticker).size());
-//		if (storedData.get(ticker).size()>2){
-//			System.out.println("PREVIOUS QUOTE: " + storedData.get(ticker).get(storedData.get(ticker).size()-2).getMidPrice());
-//		}
+		if (storedData.get(ticker).size() > QuotesOrderLogger.quotesLimit){
+			storedData.get(ticker).remove(0);
+		}
 //		System.out.println("ADD " + ticker + ", for mid price " + q.getMidPrice());
 		storedData.get(ticker).add(q);
 	}

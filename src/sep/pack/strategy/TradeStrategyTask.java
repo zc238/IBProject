@@ -12,6 +12,7 @@ public class TradeStrategyTask implements Runnable{
 	public TradeStrategyTask(TradeStrategy strat, QuotesOrderController ct){
 		strategy = strat;
 		controller = ct;
+		System.out.println(strat.toString());
 	}
 	
 	@Override
@@ -20,7 +21,7 @@ public class TradeStrategyTask implements Runnable{
 			try {
 				List<OrderContractContainer> orders = strategy.getOrdersFromHistQuotes();
 				if (orders.size() == 0){ //Nothing to submit, wait 1 second. 
-					Thread.sleep(1000); 
+					Thread.sleep(5000); 
 				}else{
 					for (OrderContractContainer o : orders){
 						controller.sendOrder(o);

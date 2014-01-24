@@ -34,6 +34,16 @@ public class Quotes{
 		localTimeStamp = new Date();
 	}
 	
+	public Quotes(Quotes a){
+		bid = a.bid;
+		ask = a.ask;
+		bidSize = a.bidSize;
+		askSize = a.askSize;
+		localTimeStamp = new Date();
+		reqId = a.reqId;
+		ticker = a.ticker;
+	}
+	
 	public Quotes(double b, double a, int bS, int aS, int id, String tick){
 		bid = b;
 		ask = a;

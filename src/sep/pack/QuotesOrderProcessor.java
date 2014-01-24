@@ -57,7 +57,7 @@ public class QuotesOrderProcessor extends ApiController{
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);
-		//records.addQuotesToRecords(ticker, lastNbbo); //#Quote
+		//records.addQuotesToRecords(ticker, new Quotes(lastNbbo)); //#Quote
 		counter.addAndGet(1);
 		if (QuotesOrderLogger.RECORD_DATA.get()){
 			writeNbboToFile(ticker);
@@ -96,7 +96,7 @@ public class QuotesOrderProcessor extends ApiController{
 		}
 		String ticker = QuotesOrderController.REQ_TO_TICKER.get(reqId);
 		records.updateLatestNbbo(ticker, lastNbbo);
-		records.addQuotesToRecords(ticker, lastNbbo);
+		records.addQuotesToRecords(ticker, new Quotes(lastNbbo));
 		counter.addAndGet(1);
 		if (QuotesOrderLogger.RECORD_DATA.get()){
 			writeNbboToFile(ticker);

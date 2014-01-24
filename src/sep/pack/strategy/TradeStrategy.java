@@ -18,7 +18,7 @@ import cern.jet.stat.Descriptive;
 
 import com.ib.controller.Types.Action;
 
-public class TradeStrategy implements Runnable{
+public class TradeStrategy{
 	
 	private QuotesOrderLogger marketdata;
 	private CubicTransCost transCost;
@@ -81,7 +81,14 @@ public class TradeStrategy implements Runnable{
 				|| histQuotes.get(tickerY).size() < windowSize*2 
 				|| histQuotes.get(tickerX).size() < windowSize*2){ //wait for more quotes
 			histQuotes = marketdata.getStoredData();
-			Thread.sleep(500);
+			System.out.println("Not enough quotes, waiting...need: " + windowSize*2);
+			if (histQuotes.get(tickerY) != null){
+				System.out.println("TICKER " + tickerY + ": SIZE: " + histQuotes.get(tickerY).size());
+			}
+			if (histQuotes.get(tickerX) != null){
+				System.out.println("TICKER " + tickerX + ": SIZE: " + histQuotes.get(tickerX).size());
+			}
+			Thread.sleep(10000);
 		}
 		return histQuotes;
 	}
@@ -105,7 +112,7 @@ public class TradeStrategy implements Runnable{
 	
 	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition()); does not need to consider for paper trading, since all positions are filled immediately
 	public List<OrderContractContainer> getOrdersFromHistQuotes() throws InterruptedException{
-		
+		System.out.println("Running Strategy...");
 		double slope = (tickerLeverage.get(tickerY) + 0.0) / (tickerLeverage.get(tickerX) + 0.0);
 		ConcurrentHashMap<String, List<Quotes>> histQuotes = getHistoricalQuotes(tickerX, tickerY);
 		
@@ -137,7 +144,9 @@ public class TradeStrategy implements Runnable{
 		
  		double residual =  getLatestResidual(trimQuotes(histQuotes.get(tickerX), false, windowSize),
  										trimQuotes(histQuotes.get(tickerY), false, windowSize), slope);
-
+ 		
+ 		System.out.println("Residual Computed: " + residual);
+ 		
 		meanY = alpha * meanY + (1 - alpha) * midPriceY;
 		meanX = alpha * meanX + (1 - alpha) * midPriceX;
 
@@ -145,6 +154,9 @@ public class TradeStrategy implements Runnable{
 		Action action2 = null;
 		
 		double expectedReturn = expProfit.getExpectedProf(new Pair<String>(tickerX, tickerY), residual);
+		
+		System.out.println("Expected Profit Computed: " + expectedReturn);
+		
 		if (slope < 0){ // small residual: buy both; large residual: sell both;
 			// no position
 			if ((marketdata.getPosition(tickerY) == 0) && (marketdata.getPosition(tickerX) == 0)){
@@ -224,6 +236,7 @@ public class TradeStrategy implements Runnable{
 														  Action action1, Action action2){
 		List<OrderContractContainer> orders = new LinkedList<OrderContractContainer>();
 		if (action1 == null || action2 == null){
+			System.out.println("No Order Generated");
 			return orders; // 0 size, no trades
 		}
 		
@@ -233,12 +246,14 @@ public class TradeStrategy implements Runnable{
 		OrderContractContainer oc2 = new OrderContractContainer(OrderUtility.createContract(ticker2), 
 																OrderUtility.createNewOrder(size2, action2));
 		orders.add(oc2);
+		System.out.println("Orders Generated");
 		return orders;
 	}
 
 	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		
+	public String toString() {
+		return "TradeStrategy [Pair Trading], Pairs: " + tickerX + ", and " + tickerY + "\n";
 	}
+	
+	
 }
