@@ -3,6 +3,9 @@ package sep.pack;
 import java.util.HashMap;
 import java.util.List;
 
+import sep.pack.support.OrderUtility;
+import sep.pack.support.UserInfo;
+
 import com.ib.controller.ApiConnection;
 import com.ib.controller.ApiController.IConnectionHandler;
 import com.ib.controller.NewContract;

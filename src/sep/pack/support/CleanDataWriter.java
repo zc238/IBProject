@@ -1,7 +1,8 @@
-package sep.pack;
+package sep.pack.support;
 
 import java.io.IOException;
 
+import sep.pack.QuotesOrderProcessor;
 import sep.pack.data.TICKER;
 
 public class CleanDataWriter implements Runnable{

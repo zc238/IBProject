@@ -1,4 +1,4 @@
-package sep.pack;
+package sep.pack.data;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

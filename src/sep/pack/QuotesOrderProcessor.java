@@ -8,7 +8,10 @@ import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import sep.pack.data.Quotes;
 import sep.pack.data.TICKER;
+import sep.pack.support.OrderUtility;
+import sep.pack.support.UserInfo;
 
 import com.ib.client.Contract;
 import com.ib.client.Order;
@@ -26,6 +29,10 @@ public class QuotesOrderProcessor extends ApiController{
 	private String dataPath;
 	private String cleanDataPath;
 	
+	public QuotesOrderProcessor(IConnectionHandler handler, ILogger inLogger, ILogger outLogger, QuotesOrderLogger r) {
+		super(handler, inLogger, outLogger);
+		records = r;
+	}
 	public QuotesOrderProcessor(IConnectionHandler handler, ILogger inLogger, 
 								ILogger outLogger, QuotesOrderLogger r, String dP, String cdP) {
 		super(handler, inLogger, outLogger);

@@ -8,11 +8,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import sep.pack.OrderContractContainer;
-import sep.pack.OrderUtility;
-import sep.pack.Quotes;
 import sep.pack.QuotesOrderLogger;
 import sep.pack.data.Pair;
+import sep.pack.data.Quotes;
 import sep.pack.data.TICKER;
+import sep.pack.support.OrderUtility;
 import cern.colt.list.DoubleArrayList;
 import cern.jet.stat.Descriptive;
 
@@ -21,7 +21,7 @@ import com.ib.controller.Types.Action;
 public class TradeStrategy{
 	
 	private QuotesOrderLogger marketdata;
-	private CubicTransCost transCost;
+	private TransCost transCost;
 	private ExpectedProfit expProfit;
 	private final double IB_TRANS_COST = 0.005;
 	private String tickerX;
@@ -40,7 +40,7 @@ public class TradeStrategy{
 		tickerLeverage.put(TICKER.UPR, 3);
 	}
 	
-	public TradeStrategy(QuotesOrderLogger md, CubicTransCost tc, 
+	public TradeStrategy(QuotesOrderLogger md, TransCost tc, 
 							ExpectedProfit profit, String tX, String tY, int wS, int tS){
 		marketdata = md;
 		transCost = tc;
