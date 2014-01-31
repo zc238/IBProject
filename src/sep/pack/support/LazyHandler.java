@@ -28,7 +28,7 @@ public class LazyHandler implements IConnectionHandler {
 
 	@Override
 	public void message(int id, int errorCode, String errorMsg) {
-		System.out.println("MSG From IB: " + errorMsg);
+		System.out.println("MSG From IB: " + errorMsg + ", for ID: " + id);
 	}
 
 	@Override

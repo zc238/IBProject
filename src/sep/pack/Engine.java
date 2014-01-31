@@ -86,6 +86,7 @@ public class Engine {
 					if(tokenizer.countTokens()==0){ continue; }
 					if(tokenizer.countTokens() != 4){
 						System.out.println("WARNING: YOUR TRANSCOST PARAMS ARE NOT SET UP CORRECTED, YOU NEED 2 TICKERS AND 2 COEFFICIENTS");
+						System.out.println("PROBLEM INPUT: " + line);
 					}
 					List<String> coefs = new LinkedList<String>();
 					while(tokenizer.hasMoreElements()){

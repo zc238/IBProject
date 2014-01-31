@@ -113,7 +113,7 @@ public class QuotesOrderProcessor extends ApiController{
 	}
 	
 	@Override public void nextValidId(int orderId) {
-		UserInfo.orderID.set(orderId);
+		UserInfo.getOrderID().set(orderId);
 	}
 	
 	//TODO, refactor this code

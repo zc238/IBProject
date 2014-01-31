@@ -51,16 +51,15 @@ public class QuotesOrderController{
 		if (!connection.isConnected()){
 			makeconnection();
 		}
-		while (UserInfo.orderID.get() == -1){
+		while (UserInfo.getOrderID().get() == -1){
 			Thread.sleep(1000);
 		}
 		
-		System.out.println("Placing Order for Order ID: " + (UserInfo.orderID.get() + 1));
 		OrderUtility.displayTime();
 		NewContract contract = OrderUtility.createContract(ticker);
 		NewOrder order = OrderUtility.createNewOrder(quantity, action, false, limitPrice);
 		connection.placeOrder(contract, order);
-		logger.addActiveOrder(UserInfo.orderID.get());
+		logger.addActiveOrder(UserInfo.getOrderID().get());
 		System.out.println("Orders Sent");
 	}
 	
@@ -68,16 +67,15 @@ public class QuotesOrderController{
 		if (!connection.isConnected()){
 			makeconnection();
 		}
-		while (UserInfo.orderID.get() == -1){
+		while (UserInfo.getOrderID().get() == -1){
 			Thread.sleep(1000);
 		}
 		
-		System.out.println("Placing Order for Order ID: " + (UserInfo.orderID.get() + 1));
 		OrderUtility.displayTime();
 		NewContract contract = OrderUtility.createContract(ticker);
 		NewOrder order = OrderUtility.createNewOrder(quantity, action);
 		connection.placeOrder(contract, order);
-		logger.addActiveOrder(UserInfo.orderID.get());
+		logger.addActiveOrder(UserInfo.getOrderID().get());
 		System.out.println("Orders Sent");
 	}
 	
@@ -85,10 +83,9 @@ public class QuotesOrderController{
 		if (!connection.isConnected()){
 			makeconnection();
 		}
-		while (UserInfo.orderID.get() == -1){
+		while (UserInfo.getOrderID().get() == -1){
 			Thread.sleep(1000);
 		}
-		System.out.println("Placing Order for Order ID: " + (UserInfo.orderID.get() + 1));
 		OrderUtility.displayTime();
 		NewContract contract = container.getContract();
 		NewOrder order = container.getOrder();

@@ -35,7 +35,8 @@ public class OrderUtility {
 		}
 		order.totalQuantity(quantity);
 		order.lmtPrice(limitPrice);
-		order.orderId(UserInfo.orderID.incrementAndGet());
+		order.orderId(UserInfo.getOrderID().incrementAndGet());
+		System.out.println("Placing Order ID: " + UserInfo.getOrderID().get());
 		return order;
 	}
 	
