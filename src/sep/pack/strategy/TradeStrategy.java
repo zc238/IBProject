@@ -156,6 +156,8 @@ public class TradeStrategy{
 		double expectedReturn = expProfit.getExpectedProf(new Pair<String>(tickerX, tickerY), residual);
 		
 		System.out.println("Expected Profit Computed: " + expectedReturn);
+		System.out.println("Position for " + tickerX + " is " + marketdata.getPosition(tickerX));
+		System.out.println("Position for " + tickerY + " is " + marketdata.getPosition(tickerY));
 		
 		if (slope < 0){ // small residual: buy both; large residual: sell both;
 			// no position

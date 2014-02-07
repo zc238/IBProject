@@ -9,6 +9,7 @@ public class MyDemo {
 		Engine engine = new Engine(args[0]);
 		engine.startStrategy();
 	}
+	
 //	public static void main(String[] args) throws InterruptedException {		
 //		// Wirings
 //		MyLogger m_inLogger = new MyLogger();

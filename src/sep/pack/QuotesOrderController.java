@@ -79,6 +79,11 @@ public class QuotesOrderController{
 		System.out.println("Orders Sent");
 	}
 	
+    public void reqPositions(boolean subscribe) {
+    	connection.reqPositions();
+//    	connection.reqAccountUpdates(subscribe, UserInfo.acct);
+    }
+    
 	public void sendOrder(OrderContractContainer container) throws InterruptedException{
 		if (!connection.isConnected()){
 			makeconnection();

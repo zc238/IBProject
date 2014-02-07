@@ -116,14 +116,20 @@ public class QuotesOrderProcessor extends ApiController{
 		UserInfo.getOrderID().set(orderId);
 	}
 	
+	@Override public void position(String account, Contract contractIn, int pos, double avgCost) {
+		NewContract contract = new NewContract( contractIn);
+		records.addToCurrentPositions(contract.symbol(), pos);
+	}
+
 	//TODO, refactor this code
 	@Override public void openOrder(int orderId, Contract contract, Order orderIn, OrderState orderState) {
 		UserInfo.acct = orderIn.m_account;
 		System.out.println("Receiving Order Information for Order ID: " + orderId);
 		System.out.println(orderIn.m_action + " " + contract.m_symbol + 
 							". The state is: " + orderState.m_status + 
-							". OrderType: " + orderIn.m_orderType);
-		if (records.hasOrder(orderId)){ //otherwise, it is already processed
+							". OrderType: " + orderIn.m_orderType + 
+							". Quantity: " + orderIn.m_totalQuantity);
+		if (!records.hasOrder(orderId)){ //otherwise, it is already processed
 			if (orderState.m_status.toUpperCase().equals("FILLED")){
 				if (orderIn.m_action.toUpperCase().equals("BUY")){
 					records.addToCurrentPositions(contract.m_symbol, orderIn.m_totalQuantity);

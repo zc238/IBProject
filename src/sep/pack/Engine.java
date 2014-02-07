@@ -146,6 +146,7 @@ public class Engine {
 		// Retrieve Market Data
 		controller.makeconnection();
 		controller.reqMktData(TICKER.TICKERS, false);
+		controller.reqPositions(false);;
 		
 		// Start Automated Trading Strategy
 	
