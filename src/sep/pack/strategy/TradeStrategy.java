@@ -256,6 +256,4 @@ public class TradeStrategy{
 	public String toString() {
 		return "TradeStrategy [Pair Trading], Pairs: " + tickerX + ", and " + tickerY + "\n";
 	}
-	
-	
 }

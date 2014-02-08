@@ -1,20 +1,28 @@
-function EPParams=calibrateEP(ticker1,ticker2,timeLag)
+function EPParams=calibrateEP(ticker1,ticker2,slope,timeLag,numBucket)
 
-data=csvread('SDS_SPX_03-Dec-2012.csv');
+%data=csvread('SPY_SH.csv');
+data1=cleanData(ticker1);
+data2=cleanData(ticker2);
 
-data1=data(:,2:6);
-data2=data(:,6:10);
+data1=data1(1:timeLag:end,:);
+data2=data2(1:timeLag:end,:);
 
 midPrice1=(data1(:,2)+data1(:,3))/2;
 midPrice2=(data2(:,2)+data2(:,3))/2;
 
-midPriceChange1=midPrice1(1+timeLag:timeLag:end)-midPrice1(1:timeLag:end-timeLag);
-midPriceChange2=midPrice2(1+timeLag:timeLag:end)-midPrice2(1:timeLag:end-timeLag);
+midPriceScale=mean(midPrice1)/mean(midPrice2);
+residual=(1-slope)*mean(midPrice1)+slope*midPriceScale.*midPrice2-midPrice1;
 
-[b,bint,r]=regress(midPrice1,midPrice2);
+midPriceChange1=midPrice1(2:end)-midPrice1(1:end-1);
+midPriceChange2=midPrice2(2:end)-midPrice2(1:end-1);
 
-% long 1 share ticker1 and short b share ticker2
-profit=midPriceChange1-b*midPriceChange2;
+profit=midPriceChange1-midPriceScale*slope*midPriceChange2;
 
-% calibrate expected profit
-EPParams=regress(profit,r(1+timeLag:timeLag:end));
+residualBucket=min(residual):range(residual)/numBucket:max(residual);
+bucketAvg=(residualBucket(1:end-1)+residualBucket(2:end))/2;
+
+for i=1:numBucket
+    profitBucketAvg(i)=mean(profit(and(residual(2:end)>=residualBucket(i),residual(2:end)<residualBucket(i+1))));
+end
+
+EPParams=regress(profitBucketAvg',[ones(size(bucketAvg')),bucketAvg']);
