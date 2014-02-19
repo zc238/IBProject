@@ -1,22 +1,5 @@
-function TCParams=calibrateTC()
-ticker='SDS';
-if strcmp(ticker,'SPY')
-    data=csvread('SPY.csv');
-elseif strcmp(ticker,'SH')
-    data=csvread('SH.csv');
-elseif strcmp(ticker,'SSO')
-    data=csvread('SSO.csv');
-elseif strcmp(ticker,'SDS')
-    data=csvread('SDS.csv');
-elseif strcmp(ticker,'UPRO')
-    data=csvread('UPRO.csv');
-elseif strcmp(ticker,'SPXU')
-    data=csvread('SPXU.csv');
-end
-
-data=data(data(:,1)>=0,:);
-data=data(data(:,1)<=23400000,:);
-
+function TCParams=calibrateTC(ticker)
+data=readData(ticker);
 timeStamp=data(:,1);
 n=numel(timeStamp);
 bid=data(:,2);
@@ -32,7 +15,6 @@ cleanData(:,2)=imb;
 cleanData(:,3)=midPrice;
 
 for i=1:4
-    i
     timeStampLag=timeStamp+10^(i-1);
     index=zeros(n,1);
     for j=1:n
