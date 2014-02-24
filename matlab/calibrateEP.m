@@ -26,12 +26,15 @@ cleanData(:,3)=midPrice2(index(:,2));
 B=zeros(n,1);
 f=mean(cleanData(:,3))/mean(cleanData(:,2));
 windowSize=100;
-startIndex=find(cleanData(:,1)<windowSize,1,'last');
-for i=startIndex+1:n
+%cut off the beginning of the data, which has no valid B and residual
+%values
+startIndex=find(cleanData(:,1)>windowSize,1,'first');
+
+for i=startIndex:n
     localTime=cleanData(i,1);
-    index=find(cleanData(:,1)<localTime-windowSize,1,'last');
-    pastMidPrice1=cleanData(index+1:i,2);
-    pastMidPrice2=cleanData(index+1:i,3);
+    index=find(cleanData(:,1)>(localTime-windowSize),1,'first');
+    pastMidPrice1=cleanData(index:i,2);
+    pastMidPrice2=cleanData(index:i,3);
     B(i)=mean(pastMidPrice2-slope*f*pastMidPrice1);
 end
 
@@ -44,7 +47,7 @@ for i=1:m
     timeStampLag=timeStamp+10^(i+1);
     index=zeros(n,1);
     for j=1:n
-        index(j)=find(cleanData(:,1)<=timeStampLag(j),1,'last');
+        index(j)=j-1+find(cleanData(j:end,1)<=timeStampLag(j),1,'last');
     end
     cleanData(:,5+i)=portfolio(index)-portfolio;
 end
@@ -58,16 +61,16 @@ for i=1:m
     index=find(cleanData(:,1)<=cleanData(end,1)-10^(i+1),1,'last');
     PnL=PnL(startIndex:index);
     for j=1:numel(residualBucket)-1
-        if j==1
-            PnLBucketAve(j,i)=mean(PnL(residual(startIndex:index)<residualBucket(j+1)));
-        elseif j==numel(residualBucket)-1
-            PnLBucketAve(j,i)=mean(PnL(residual(startIndex:index)>=residualBucket(j)));
-        else
-            PnLBucketAve(j,i)=mean(PnL(and(residual(startIndex:index)>=residualBucket(j),residual(startIndex:index)<residualBucket(j+1))));
-        end            
+        PnLBucketAve(j,i)=mean(PnL(and(residual(startIndex:index)>=residualBucket(j),residual(startIndex:index)<residualBucket(j+1))));
+        if (j==1) || (j==5) || (j==10)
+            %figure();
+            %hist(PnL(and(residual(startIndex:index)>=residualBucket(j),residual(startIndex:index)<residualBucket(j+1))),20);
+        end
     end
 end
 residualBucketAvg=(residualBucket(1:end-1)+residualBucket(2:end))/2;
+hist(residual(startIndex:end));
+figure();
 plot(residualBucketAvg,PnLBucketAve);
 title([strcat(ticker1,'-',ticker2) 'Expected Profit vs. Residual Value']);
 xlabel('Residual Value');

@@ -35,6 +35,10 @@ for i=1:m
     midPriceChange=midPriceChange(1:index);
     for j=1:numel(imbBucket)-1
         midPriceChangeBucketAvg(j,i)=mean(midPriceChange(and(imb(1:index)>=imbBucket(j),imb(1:index)<imbBucket(j+1))));
+        if or(j==1,j==4)
+            figure();
+            hist(midPriceChange(and(imb(1:index)>=imbBucket(j),imb(1:index)<imbBucket(j+1))),20);
+        end
     end
 end
 
