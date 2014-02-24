@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +40,10 @@ public class QuotesOrderProcessor extends ApiController{
 		dataPath = dP;
 		cleanDataPath = cdP;
 		records = r;
+	}
+	
+	public void setDataPath(String dataPath) {
+		this.dataPath = dataPath;
 	}
 	
 	private void displayTimeNQuote(Quotes q){
@@ -113,7 +118,9 @@ public class QuotesOrderProcessor extends ApiController{
 	}
 	
 	@Override public void nextValidId(int orderId) {
-		UserInfo.getOrderID().set(orderId);
+		if (orderId > UserInfo.getOrderID().get()){
+			UserInfo.getOrderID().set(orderId);
+		}
 	}
 	
 	@Override public void position(String account, Contract contractIn, int pos, double avgCost) {
@@ -177,14 +184,14 @@ public class QuotesOrderProcessor extends ApiController{
 	
 	private synchronized void writeNbboToFile(String ticker){
 		try{
-			String fileName = dataPath 
+			String fileName = dataPath + "/"
 								+ ticker + "_"
 								+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
 								+ ".csv";
 			File quotes = new File(fileName);
 			FileWriter writer = new FileWriter(quotes, true);
 			ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
-			String row = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + ",";
+			String row = OrderUtility.getMiliSecondsDiffFromNine() + ","; //milisecond time stamp
 			Quotes q = nbboMap.get(ticker);
 			if (q.hasZero()){ writer.close(); return; }
 			row += nbboMap.get(ticker).toStringOnlyQ();
@@ -197,14 +204,14 @@ public class QuotesOrderProcessor extends ApiController{
 	}
 	
 	public synchronized void writeToCleanData(String ticker1, String ticker2) throws IOException{
-		String fileName = cleanDataPath 
+		String fileName = cleanDataPath + "/"
 							+ ticker1 + "_" + ticker2 + "_"
 							+ new SimpleDateFormat("dd-MMM-yyyy").format(new Date())
 							+ ".csv";
 		File quotes = new File(fileName);
 		FileWriter writer = new FileWriter(quotes, true);
 		ConcurrentHashMap<String, Quotes> nbboMap = records.getNbboMap();
-		String row = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()) + ",";
+		String row = OrderUtility.getMiliSecondsDiffFromNine() + ","; //milisecond time stamp
 		Quotes q1 = records.getLatestNbbo(ticker1);
 		Quotes q2 = records.getLatestNbbo(ticker2);
 		

@@ -1,6 +1,7 @@
 package sep.pack.support;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Vector;
 
@@ -35,12 +36,24 @@ public class OrderUtility {
 		}
 		order.totalQuantity(quantity);
 		order.lmtPrice(limitPrice);
-		order.orderId(UserInfo.getOrderID().incrementAndGet());
+		order.orderId(UserInfo.incrementOrderId());
 		System.out.println("Placing Order ID: " + UserInfo.getOrderID().get());
 		return order;
 	}
 	
 	public static void displayTime(){
 		System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+	}
+	
+	public static int getMiliSecondsDiffFromNine(){
+		Calendar c = Calendar.getInstance(); //now
+	    Calendar m = Calendar.getInstance(); //midnight
+	    m.set(Calendar.HOUR_OF_DAY, 9);
+	    m.set(Calendar.MINUTE, 0);
+	    m.set(Calendar.SECOND, 0);
+	    m.set(Calendar.MILLISECOND, 0);
+	
+	    int diff = (int) (c.getTimeInMillis() - m.getTimeInMillis()) ;
+	    return diff;
 	}
 }
