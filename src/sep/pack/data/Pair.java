@@ -13,6 +13,13 @@ public class Pair<T> {
 	public T getB() {
 		return b;
 	}
+	
+	public void setA(T a) {
+		this.a = a;
+	}
+	public void setB(T b) {
+		this.b = b;
+	}
 	@Override
 	public int hashCode() {
 		final int prime = 31;

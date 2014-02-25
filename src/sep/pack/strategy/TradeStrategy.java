@@ -1,6 +1,7 @@
 package sep.pack.strategy;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,8 +27,13 @@ public class TradeStrategy{
 	private final double IB_TRANS_COST = 0.005;
 	private String tickerX;
 	private String tickerY;
-	private int windowSize;
+	private double windowSize;
 	private int tradeSize;
+	private long startMs;
+	
+	private double oldBeta = 0.0;
+	private double meanX = 0.0;
+	private double meanY = 0.0;
 	
 	public final Map<String, Integer> tickerLeverage;
 	{
@@ -41,25 +47,37 @@ public class TradeStrategy{
 	}
 	
 	public TradeStrategy(QuotesOrderLogger md, TransCost tc, 
-							ExpectedProfit profit, String tX, String tY, int wS, int tS){
+							ExpectedProfit profit, String tX, String tY, double wS, int tS){
 		marketdata = md;
 		transCost = tc;
 		expProfit = profit;
 		tickerX = tX;
 		tickerY = tY;
-		windowSize = wS;
+		windowSize = wS*1000*60; //wS is in minute, windowSize in milisecond
 		tradeSize = tS;
+		startMs = Calendar.getInstance().getTimeInMillis();
 	}
 	
-	private List<Quotes> trimQuotes(List<Quotes> quotes, boolean usePreviousWindow, int windowSize){
+	private void removeQuotes(List<Quotes> quoteRecords, Quotes latestQuotes, double windowSizeMs){
+		long msTs = latestQuotes.getLocalTimeStamp().getTime();
+		if (quoteRecords.size()>0){
+			long earlyMsTs = quoteRecords.get(0).getLocalTimeStamp().getTime();
+			if ( (msTs - earlyMsTs) > windowSizeMs){ //outside time window
+				quoteRecords.remove(0);
+				removeQuotes(quoteRecords, latestQuotes, windowSizeMs);
+			}
+		}
+	}
+	
+	private List<Quotes> trimQuotes(List<Quotes> quotes, boolean usePreviousWindow, double windowSize){
 		List<Quotes> l = new ArrayList<Quotes>();
 		if (usePreviousWindow){
-			for (int i=quotes.size()-2*windowSize; i < quotes.size()-windowSize; ++i){
+			for (int i=(int) (quotes.size()-2*windowSize); i < quotes.size()-windowSize; ++i){
 				l.add(quotes.get(i));
 			}
 		}
 		else{
-			for (int i=quotes.size()-windowSize; i < quotes.size(); ++i){
+			for (int i=(int) (quotes.size()-windowSize); i < quotes.size(); ++i){
 				l.add(quotes.get(i));
 			}
 		}
@@ -75,13 +93,13 @@ public class TradeStrategy{
 		return l;
 	}
 	
-	private ConcurrentHashMap<String, List<Quotes>> getHistoricalQuotes(String tickerX, String tickerY) throws InterruptedException{
+	private ConcurrentHashMap<String, List<Quotes>> getAndTrimHistoricalQuotes(String tickerX, String tickerY, double windowSizeMs, 
+																				Quotes latestQuotesX, Quotes latestQuotesY) throws InterruptedException{
 		ConcurrentHashMap<String, List<Quotes>> histQuotes = marketdata.getStoredData();
 		while (histQuotes.get(tickerY)==null || histQuotes.get(tickerX)==null 
-				|| histQuotes.get(tickerY).size() < windowSize*2 
-				|| histQuotes.get(tickerX).size() < windowSize*2){ //wait for more quotes
+				|| (Calendar.getInstance().getTimeInMillis()-startMs) < windowSize){ //wait for more quotes, time window not reached
 			histQuotes = marketdata.getStoredData();
-			System.out.println("Not enough quotes, waiting...need: " + windowSize*2);
+			System.out.println("Need to wait at least " + windowSize + " miliseconds.");
 			if (histQuotes.get(tickerY) != null){
 				System.out.println("TICKER " + tickerY + ": SIZE: " + histQuotes.get(tickerY).size());
 			}
@@ -90,65 +108,83 @@ public class TradeStrategy{
 			}
 			Thread.sleep(10000);
 		}
+		removeQuotes(histQuotes.get(tickerY), latestQuotesY, windowSizeMs);
+		removeQuotes(histQuotes.get(tickerX), latestQuotesX, windowSizeMs);
+		int diffSize = histQuotes.get(tickerY).size() - histQuotes.get(tickerX).size();
+		if (diffSize > 0){
+			for(int i=0; i<diffSize; i++){
+				histQuotes.get(tickerY).remove(i);
+			}
+		}else if(diffSize < 0){
+			for(int i=0; i<diffSize; i++){
+				histQuotes.get(tickerX).remove(i);
+			}
+		}
 		return histQuotes;
 	}
 	
-	private double getLatestResidual(List<Quotes> xs, List<Quotes> ys, double slope){
-		DoubleArrayList avgTickYQ = convertQuoteToDList(xs);
-		DoubleArrayList avgTickXQ = convertQuoteToDList(ys);
-		
-		double meanY = Descriptive.mean(avgTickYQ);
-		double meanX = Descriptive.mean(avgTickXQ);
-		
-		double scaling = meanY / meanX;
-		DoubleArrayList resYs = new DoubleArrayList();
-		for (int i=0; i<ys.size(); ++i){
-			double y = avgTickYQ.get(i) - slope*avgTickXQ.get(i)*scaling;
-			resYs.add(y);
+	private double getLatestResidual(List<Quotes> xs, List<Quotes> ys, double slope, boolean computeAgain){
+		if(computeAgain){//If we decide to recompute the residual using a new beta
+			DoubleArrayList avgTickYQ = convertQuoteToDList(xs);
+			DoubleArrayList avgTickXQ = convertQuoteToDList(ys);
+			
+			double meanY = Descriptive.mean(avgTickYQ);
+			double meanX = Descriptive.mean(avgTickXQ);
+			
+			double scaling = meanY / meanX;
+			DoubleArrayList resYs = new DoubleArrayList();
+			for (int i=0; i<ys.size(); ++i){
+				double y = avgTickYQ.get(i) - slope*avgTickXQ.get(i)*scaling;
+				resYs.add(y);
+			}
+			
+			return resYs.get(ys.size()-1) - Descriptive.mean(resYs);
+		}else{//else we use the old beta already computed from old quotes
+			return ys.get(ys.size()-1).getMidPrice() - this.oldBeta*xs.get(xs.size()-1).getMidPrice();
 		}
-		
-		return resYs.get(ys.size()-1) - Descriptive.mean(resYs);
 	}
 	
-	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition()); does not need to consider for paper trading, since all positions are filled immediately
+	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition()); 
 	public List<OrderContractContainer> getOrdersFromHistQuotes() throws InterruptedException{
 		System.out.println("Running Strategy...");
 		double slope = (tickerLeverage.get(tickerY) + 0.0) / (tickerLeverage.get(tickerX) + 0.0);
-		ConcurrentHashMap<String, List<Quotes>> histQuotes = getHistoricalQuotes(tickerX, tickerY);
-		
+			
 		double threshold = 0;
 		Quotes quotesY = marketdata.getLatestNbbo(tickerY);
 		Quotes quotesX = marketdata.getLatestNbbo(tickerX);
+		
+		ConcurrentHashMap<String, List<Quotes>> histQuotes = getAndTrimHistoricalQuotes(tickerX, tickerY, windowSize, quotesX, quotesY);
+		
 		double orderImbaY = quotesY.getImbalance();
 		double orderImbaX = quotesX.getImbalance();
 		
 		double midPriceY = quotesY.getMidPrice();
 		double midPriceX = quotesX.getMidPrice();
 		
-		// Previous Window
-		DoubleArrayList avgTickYQHist = convertQuoteToDList(trimQuotes(histQuotes.get(tickerY), true, windowSize));
-		DoubleArrayList avgTickXQHist = convertQuoteToDList(trimQuotes(histQuotes.get(tickerX), true, windowSize));
-		
 		// Current Window
 		DoubleArrayList avgTickYQ = convertQuoteToDList(trimQuotes(histQuotes.get(tickerY), false, windowSize));
 		DoubleArrayList avgTickXQ = convertQuoteToDList(trimQuotes(histQuotes.get(tickerX), false, windowSize));
 		
 		double alpha = 1 - 1 / windowSize;
-		double meanY = Descriptive.mean(avgTickYQHist);
-		double meanX = Descriptive.mean(avgTickXQHist);
+		if (meanY == 0.0){
+			meanY = Descriptive.mean(convertQuoteToDList(histQuotes.get(tickerY)));
+		}else{
+			meanY = alpha * meanY + (1 - alpha) * midPriceY;
+		}
+		if (meanX == 0.0){
+			meanX = Descriptive.mean(convertQuoteToDList(histQuotes.get(tickerX)));
+		}else{
+			meanX = alpha * meanX + (1 - alpha) * midPriceX;
+		}
 		
 		double scaling = Descriptive.mean(avgTickYQ) / Descriptive.mean(avgTickXQ);
 		
 		int tradeSizeX = tradeSize;
 		int tradeSizeY = (int) (tradeSize * scaling * Math.abs(slope));
 		
- 		double residual =  getLatestResidual(trimQuotes(histQuotes.get(tickerX), false, windowSize),
- 										trimQuotes(histQuotes.get(tickerY), false, windowSize), slope);
+ 		double residual =  getLatestResidual(histQuotes.get(tickerX), histQuotes.get(tickerY), slope, true);
  		
  		System.out.println("Residual Computed: " + residual);
- 		
-		meanY = alpha * meanY + (1 - alpha) * midPriceY;
-		meanX = alpha * meanX + (1 - alpha) * midPriceX;
 
 		Action action1 = null;
 		Action action2 = null;
@@ -256,4 +292,5 @@ public class TradeStrategy{
 	public String toString() {
 		return "TradeStrategy [Pair Trading], Pairs: " + tickerX + ", and " + tickerY + "\n";
 	}
+
 }

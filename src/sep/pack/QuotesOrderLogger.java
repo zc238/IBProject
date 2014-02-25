@@ -18,7 +18,7 @@ public class QuotesOrderLogger {
 	private ConcurrentHashMap<String, Integer> submittedPositions = new ConcurrentHashMap<String, Integer>();
 	private Set<Integer> activeOrders = new HashSet<Integer>();
 	public static AtomicBoolean RECORD_DATA = new AtomicBoolean(true);
-	public static final int quotesLimit = 1000;
+	public static final int quotesLimit = 1000000;
 	
 	public void addActiveOrder(int orderId){
 		activeOrders.add(orderId);

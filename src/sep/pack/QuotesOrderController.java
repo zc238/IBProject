@@ -23,12 +23,26 @@ public class QuotesOrderController{
 		logger = log;
 	}
 
+	public void disconnect(){
+		connection.eDisconnect();
+	}
+	
 	public void reqIDs(){
 		connection.reqIds(1);
 	}
 		
 	public void makeconnection(){
 		connection.eConnect("127.0.0.1",7496,0);
+	}
+	
+	// This method should be used for only delay measurement
+	public void reqMktData(String ticker, boolean useSnapShot){
+		if (!connection.isConnected()){
+			makeconnection();
+		}
+		QuotesOrderLogger.RECORD_DATA.set(false);
+		QuotesOrderController.REQ_TO_TICKER.put(0, ticker);
+		connection.reqMktData( 0, OrderUtility.createContract(ticker).getContract(), "", useSnapShot);
 	}
 	
 	public void reqMktData(List<String> tickers, boolean writeTofile){

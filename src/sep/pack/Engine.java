@@ -19,6 +19,13 @@ import sep.pack.support.LazyHandler;
 public class Engine {
 	private String paramPath;
 	
+	// Wirings
+	private MyLogger m_inLogger = new MyLogger();
+	private LazyHandler handler = new LazyHandler();
+	private QuotesOrderLogger logger = new QuotesOrderLogger();
+	private QuotesOrderProcessor processor = new QuotesOrderProcessor(handler, m_inLogger, m_inLogger, logger);
+	private QuotesOrderController controller = new QuotesOrderController(handler, processor, logger);
+
 	public Engine(String pPath){
 		paramPath = pPath;
 	}
@@ -102,10 +109,10 @@ public class Engine {
 		return profit;
 	}
 	
-	private int getWindowSize(){
+	private double getWindowSize(){
 		String line = "";
 		boolean findWindowSize = false;
-		int windowSize = 10;
+		double windowSize = 10;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(paramPath));
 			while ((line = br.readLine())!=null){
@@ -117,7 +124,7 @@ public class Engine {
 					continue;
 				}
 				else if(findWindowSize){
-					windowSize = Integer.parseInt(line);
+					windowSize = Double.parseDouble(line);
 					br.close();
 					return windowSize;
 				}
@@ -129,24 +136,24 @@ public class Engine {
 		return windowSize;
 	}
 	
+	public void startRecordingData(){
+		processor.setDataPath(paramPath);
+		controller.makeconnection();
+		controller.reqMktData(TICKER.TICKERS, true);
+	}
+	
 	public void startStrategy(){
-		// Wirings
-		MyLogger m_inLogger = new MyLogger();
-		LazyHandler handler = new LazyHandler();
-		QuotesOrderLogger logger = new QuotesOrderLogger();
-		QuotesOrderProcessor processor = new QuotesOrderProcessor(handler, m_inLogger, m_inLogger, logger);
-		
-		QuotesOrderController controller = new QuotesOrderController(handler, processor, logger);
-
 		// Obtain parameters
 		CubicTransCost transCost = parseTransCost();
 		ExpectedProfit expProfit = parseExpProfit();
-		final int windowSize = getWindowSize();
+		final double windowSize = getWindowSize();
 		
 		// Retrieve Market Data
 		controller.makeconnection();
 		controller.reqMktData(TICKER.TICKERS, false);
-		controller.reqPositions(false);;
+		
+		// First Request existing ETF positions
+		controller.reqPositions(false);
 		
 		// Start Automated Trading Strategy
 	
