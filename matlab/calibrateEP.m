@@ -54,6 +54,7 @@ end
 
 numBucket=10;
 residualBucket=-0.01:0.002:0.01;
+%residualBucket=-0.001:0.0002:0.001;
 PnLBucketAve=zeros(numBucket,m);
 for i=1:m
     PnL=cleanData(:,5+i);
