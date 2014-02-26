@@ -20,6 +20,7 @@ public class TradeStrategyTask implements Runnable{
 		while(true){
 			try {
 				List<OrderContractContainer> orders = strategy.getOrdersFromHistQuotes();
+				controller.reqPositions(false);
 				if (orders.size() == 0){ // Nothing to submit, wait 5 seconds. 
 					Thread.sleep(5000); 
 				}else{

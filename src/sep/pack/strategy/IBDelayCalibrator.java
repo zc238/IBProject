@@ -53,7 +53,7 @@ public class IBDelayCalibrator {
 		System.out.println("The mean of the quotes delay is : " + m + " miliseconds.");
 		System.out.println("The sample variance of the delay is : " + v + " miliseconds.");
 		controller.disconnect();
-	}
+	}                                                                                                                                        
 	
 	public void measureOrderFillDelay(int avgSize, int iterations, String ticker) throws InterruptedException{
 		

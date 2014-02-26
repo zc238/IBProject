@@ -1,6 +1,5 @@
 package sep.pack.strategy;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -69,21 +68,6 @@ public class TradeStrategy{
 		}
 	}
 	
-	private List<Quotes> trimQuotes(List<Quotes> quotes, boolean usePreviousWindow, double windowSize){
-		List<Quotes> l = new ArrayList<Quotes>();
-		if (usePreviousWindow){
-			for (int i=(int) (quotes.size()-2*windowSize); i < quotes.size()-windowSize; ++i){
-				l.add(quotes.get(i));
-			}
-		}
-		else{
-			for (int i=(int) (quotes.size()-windowSize); i < quotes.size(); ++i){
-				l.add(quotes.get(i));
-			}
-		}
-		return l;
-	}
-	
 	//Must ensure quotes has at least 2*windowSize elements
 	private DoubleArrayList convertQuoteToDList(List<Quotes> quotes){
 		DoubleArrayList l = new DoubleArrayList();
@@ -110,35 +94,42 @@ public class TradeStrategy{
 		}
 		removeQuotes(histQuotes.get(tickerY), latestQuotesY, windowSizeMs);
 		removeQuotes(histQuotes.get(tickerX), latestQuotesX, windowSizeMs);
-		int diffSize = histQuotes.get(tickerY).size() - histQuotes.get(tickerX).size();
-		if (diffSize > 0){
-			for(int i=0; i<diffSize; i++){
-				histQuotes.get(tickerY).remove(i);
-			}
-		}else if(diffSize < 0){
-			for(int i=0; i<diffSize; i++){
-				histQuotes.get(tickerX).remove(i);
-			}
-		}
+
 		return histQuotes;
 	}
 	
 	private double getLatestResidual(List<Quotes> xs, List<Quotes> ys, double slope, boolean computeAgain){
 		if(computeAgain){//If we decide to recompute the residual using a new beta
-			DoubleArrayList avgTickYQ = convertQuoteToDList(xs);
-			DoubleArrayList avgTickXQ = convertQuoteToDList(ys);
+			DoubleArrayList avgTickXQ = convertQuoteToDList(xs);
+			DoubleArrayList avgTickYQ = convertQuoteToDList(ys);
 			
 			double meanY = Descriptive.mean(avgTickYQ);
 			double meanX = Descriptive.mean(avgTickXQ);
 			
 			double scaling = meanY / meanX;
 			DoubleArrayList resYs = new DoubleArrayList();
-			for (int i=0; i<ys.size(); ++i){
-				double y = avgTickYQ.get(i) - slope*avgTickXQ.get(i)*scaling;
+
+//			int diffSize = ys.size() - xs.size();
+//			if (diffSize > 0){
+//				for(int i=0; i<diffSize; i++){
+//					System.out.println(">Removing " + i);
+//					avgTickYQ.remove(i);
+//				}
+//			}else if(diffSize < 0){
+//				for(int i=0; i<diffSize; i++){
+//					avgTickXQ.remove(i);
+//					System.out.println("<Removing " + i);
+//				}
+//			}
+//			System.out.println("SizeX: " + avgTickXQ.size());
+//			System.out.println("SizeY: " + avgTickYQ.size());
+			
+			for (int i=avgTickXQ.size()-1, j=avgTickYQ.size()-1; i>0 && j>0; --i,--j){
+				double y = avgTickYQ.get(j) - slope*avgTickXQ.get(i)*scaling;
 				resYs.add(y);
 			}
-			
-			return resYs.get(ys.size()-1) - Descriptive.mean(resYs);
+//			System.out.println("SizeRes: " + resYs.size());
+			return resYs.get(resYs.size()-1) - Descriptive.mean(resYs);
 		}else{//else we use the old beta already computed from old quotes
 			return ys.get(ys.size()-1).getMidPrice() - this.oldBeta*xs.get(xs.size()-1).getMidPrice();
 		}
@@ -162,8 +153,8 @@ public class TradeStrategy{
 		double midPriceX = quotesX.getMidPrice();
 		
 		// Current Window
-		DoubleArrayList avgTickYQ = convertQuoteToDList(trimQuotes(histQuotes.get(tickerY), false, windowSize));
-		DoubleArrayList avgTickXQ = convertQuoteToDList(trimQuotes(histQuotes.get(tickerX), false, windowSize));
+		DoubleArrayList avgTickYQ = convertQuoteToDList(histQuotes.get(tickerY));
+		DoubleArrayList avgTickXQ = convertQuoteToDList(histQuotes.get(tickerX));
 		
 		double alpha = 1 - 1 / windowSize;
 		if (meanY == 0.0){

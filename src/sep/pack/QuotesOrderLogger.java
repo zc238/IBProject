@@ -33,11 +33,11 @@ public class QuotesOrderLogger {
 	}
 	
 	public void addToCurrentPositions(String ticker, int amount){
-		if (currentPositions.get(ticker)!=null){
-			currentPositions.put(ticker, currentPositions.get(ticker) + amount);
-		}else{
+//		if (currentPositions.get(ticker)!=null){
+//			currentPositions.put(ticker, currentPositions.get(ticker) + amount);
+//		}else{
 			currentPositions.put(ticker, amount);
-		}
+//		}
 	}
 	
 	public void addToSubmittedPositions(String ticker, int amount){

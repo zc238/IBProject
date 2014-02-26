@@ -126,6 +126,7 @@ public class QuotesOrderProcessor extends ApiController{
 	@Override public void position(String account, Contract contractIn, int pos, double avgCost) {
 		NewContract contract = new NewContract( contractIn);
 		records.addToCurrentPositions(contract.symbol(), pos);
+		System.out.println("Receiving Position Info from IB: Symbol="+contract.symbol()+", Position="+pos);
 	}
 
 	//TODO, refactor this code
