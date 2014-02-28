@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,6 +43,7 @@ public class QuotesOrderProcessor extends ApiController{
 	
 	public void setDataPath(String dataPath) {
 		this.dataPath = dataPath;
+		this.cleanDataPath = dataPath;
 	}
 	
 	private void displayTimeNQuote(Quotes q){

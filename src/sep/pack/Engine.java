@@ -17,7 +17,7 @@ import sep.pack.strategy.TradeStrategyTask;
 import sep.pack.support.LazyHandler;
 
 public class Engine {
-	private String paramPath;
+//	private String paramPath;
 	
 	// Wirings
 	private MyLogger m_inLogger = new MyLogger();
@@ -25,12 +25,8 @@ public class Engine {
 	private QuotesOrderLogger logger = new QuotesOrderLogger();
 	private QuotesOrderProcessor processor = new QuotesOrderProcessor(handler, m_inLogger, m_inLogger, logger);
 	private QuotesOrderController controller = new QuotesOrderController(handler, processor, logger);
-
-	public Engine(String pPath){
-		paramPath = pPath;
-	}
 	
-	private CubicTransCost parseTransCost(){
+	private CubicTransCost parseTransCost(String paramPath){
 		String line = "";
 		boolean findTransCost = false;
 		CubicTransCost transCost = new CubicTransCost();
@@ -71,7 +67,7 @@ public class Engine {
 		return transCost;
 	}
 	
-	private ExpectedProfit parseExpProfit(){
+	private ExpectedProfit parseExpProfit(String paramPath){
 		String line = "";
 		boolean findprofit = false;
 		ExpectedProfit profit = new ExpectedProfit();
@@ -109,7 +105,7 @@ public class Engine {
 		return profit;
 	}
 	
-	private double getWindowSize(){
+	private double getWindowSize(String paramPath){
 		String line = "";
 		boolean findWindowSize = false;
 		double windowSize = 10;
@@ -136,17 +132,17 @@ public class Engine {
 		return windowSize;
 	}
 	
-	public void startRecordingData(){
+	public void startRecordingData(String paramPath){
 		processor.setDataPath(paramPath);
 		controller.makeconnection();
 		controller.reqMktData(TICKER.TICKERS, true);
 	}
 	
-	public void startStrategy(){
+	public void startStrategy(String paramPath){
 		// Obtain parameters
-		CubicTransCost transCost = parseTransCost();
-		ExpectedProfit expProfit = parseExpProfit();
-		final double windowSize = getWindowSize();
+		CubicTransCost transCost = parseTransCost(paramPath);
+		ExpectedProfit expProfit = parseExpProfit(paramPath);
+		final double windowSize = getWindowSize(paramPath);
 		
 		// Retrieve Market Data
 		controller.makeconnection();
@@ -169,5 +165,9 @@ public class Engine {
 				t.start();
 			}
 		}
+	}
+	
+	public void shutDown(){
+		controller.disconnect();
 	}
 }

@@ -33,7 +33,7 @@ public class IBDelayCalibrator {
 		processor.setTicker(ticker);
 	}
 
-	public void measureQuotesDelay(int iterations, String ticker) throws InterruptedException{
+	public void measureQuotesDelay(int iterations, String ticker, int maxDelay) throws InterruptedException{
 		controller.makeconnection();
 		
 		double[] delays = new double[iterations];
@@ -41,7 +41,7 @@ public class IBDelayCalibrator {
 			System.out.println("Iteration: " + i);
 			long milSec = new Date().getTime();
 			controller.reqMktData(ticker, true);
-			Thread.sleep(5000); // wait 1 second, should be long enough for quotes to get back
+			Thread.sleep(maxDelay); // wait 1 second, should be long enough for quotes to get back
 			int l = logger.getStoredData().get(ticker).size();
 			long milSecLate = logger.getStoredData().get(ticker).get(l-1).getLocalTimeStamp().getTime();
 			delays[i] = milSecLate - milSec;
@@ -68,4 +68,8 @@ public class IBDelayCalibrator {
 	public Map<Integer, Pair<Double>> getOrderIdToTargetPriceMap() {
 		return orderIdToTargetPriceMap;
 	}	
+	
+	public void shutDown(){
+		controller.disconnect();
+	}
 }
