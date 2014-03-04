@@ -25,7 +25,7 @@ cleanData(:,3)=midPrice2(index(:,2));
 
 B=zeros(n,1);
 f=mean(cleanData(:,3))/mean(cleanData(:,2));
-windowSize=100;
+windowSize=1000*60*10;
 %cut off the beginning of the data, which has no valid B and residual
 %values
 startIndex=find(cleanData(:,1)>windowSize,1,'first');

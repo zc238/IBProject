@@ -3,11 +3,11 @@ ticker={'SPY','SH','SSO','SDS','UPRO','SPXU'};
 leverage=[1,-1,2,-2,3,-3];
 TCParams=[];
 EPParams=[];
-for i=1:6
-    figure();
-    calibrateTC(ticker(i));
+%for i=1:6
+%    figure();
+%    calibrateTC(ticker(i));
     %TCParams=[TCParams,TC(2)];
-end
+%end
 
 for i=1:5
     for j=i+1:6
