@@ -13,5 +13,10 @@ public class TICKER {
 	
 	public static final List<String> TICKERS = new LinkedList<String>(){
 		private static final long serialVersionUID = 1L;
-	{add(TICKER.SPY); add(TICKER.SSO); add(TICKER.SDS); add(TICKER.UPR); add(TICKER.SPX); add(TICKER.SH); }};
+	{
+		add(TICKER.SPY);
+		add(TICKER.SSO); 
+//		add(TICKER.SDS); 
+//		add(TICKER.UPR); add(TICKER.SPX); add(TICKER.SH); 
+	}};
 }

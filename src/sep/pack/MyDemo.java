@@ -15,7 +15,7 @@ import apidemo.util.HtmlButton;
 
 
 public class MyDemo {
-	private JFrame Frame1 = new JFrame("Pair Trader Station");
+	private JFrame Frame1 = new JFrame("Pair Trading Station");
 	private JPanel j2 = new JPanel();
 	private JPanel j3 = new JPanel();
 	private IBDelayCalibrator calibrator = new IBDelayCalibrator("SPY");
@@ -24,7 +24,14 @@ public class MyDemo {
 		@Override protected void actionPerformed() {
 			try{
 				t1.selectAll();
-				calibrator.measureQuotesDelay(100, t1.getSelectedText(), 3000);
+				t12.selectAll();
+				int interations = 20;
+				try{
+					interations = Integer.parseInt(t12.getSelectedText());
+				}catch(Exception e){
+					System.out.println("Incorrect Format...Using 20 iterations");
+				}
+				calibrator.measureQuotesDelay(interations, t1.getSelectedText(), 5000);
 			}catch(Exception e){}
 		}
 	};
@@ -52,15 +59,19 @@ public class MyDemo {
 		}
 	};
 	JTextField t1 = new JTextField(10);
+	JTextField t12 = new JTextField(2);
 	JTextField t2 = new JTextField(40);
 	JTextField t3 = new JTextField(40);
 	JPanel j1 = new JPanel (new FlowLayout());
 	JLabel l1 = new JLabel("Ticker: ");
+	JLabel l12 = new JLabel("Iterations: ");
 	JLabel l2 = new JLabel("Quotes Saving Directory: ");
 	JLabel l3 = new JLabel("Config File Location: ");
 	public MyDemo(){
 		j1.add(l1);
 		j1.add(t1);
+		j1.add(l12);
+		j1.add(t12);
 		j1.add(b1);
 		j2.add(l2);
 		j2.add(t2);

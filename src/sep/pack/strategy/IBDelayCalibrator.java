@@ -51,7 +51,7 @@ public class IBDelayCalibrator {
 		double m = Descriptive.mean(new DoubleArrayList(delays));
 		double v = Descriptive.sampleVariance(new DoubleArrayList(delays), m);
 		System.out.println("The mean of the quotes delay is : " + m + " miliseconds.");
-		System.out.println("The sample variance of the delay is : " + v + " miliseconds.");
+		System.out.println("The sample error of the delay is : " + Math.sqrt(v) + " miliseconds.");
 		controller.disconnect();
 	}                                                                                                                                        
 	
