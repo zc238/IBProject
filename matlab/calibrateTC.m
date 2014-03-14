@@ -9,12 +9,13 @@ askSize=data(:,5);
 imb=bidSize./(bidSize+askSize);
 midPrice=(bid+ask)/2;
 
-m=5;
+m=5; % time lag 1,10,100,1000,10000
 cleanData=zeros(n,m+3);
 cleanData(:,1)=timeStamp;
 cleanData(:,2)=imb;
 cleanData(:,3)=midPrice;
 
+% find the past mid price
 for i=1:m
     timeStampLag=timeStamp+10^(i-1);
     index=zeros(n,1);
@@ -26,19 +27,21 @@ end
 
 numBucket=10;
 imbBucket=0:1/numBucket:1;
-midPriceChangeBucketAve=zeros(numBucket,m);
+midPriceChangeBucketAvg=zeros(numBucket,m);
 
 for i=1:m
     midPriceChange=cleanData(:,3+i)-cleanData(:,3);
-    %cut off the bottom of the data, which has not valid midPrice change
+    % cut off the bottom of the data, which has not valid midPrice change
     index=find(data(:,1)<=data(end,1)-10^(i-1),1,'last');
     midPriceChange=midPriceChange(1:index);
+    
+    % symmetry the data
+    midPriceChange=[midPriceChange,-midPriceChange];
+    imb=[imb,1-imb];
+    
+    % compute the bucket average
     for j=1:numel(imbBucket)-1
         midPriceChangeBucketAvg(j,i)=mean(midPriceChange(and(imb(1:index)>=imbBucket(j),imb(1:index)<imbBucket(j+1))));
-        if or(j==1,j==4)
-            figure();
-            hist(midPriceChange(and(imb(1:index)>=imbBucket(j),imb(1:index)<imbBucket(j+1))),20);
-        end
     end
 end
 
@@ -52,4 +55,4 @@ if strcmp(ticker,'SPXU');
     legend('Location','NorthWest');
 end
 
-%TCParams=regress(midPriceChangeBucketAvg',[ones(size(bucketAvg')),bucketAvg']);
+TCParams=regress(midPriceChangeBucketAvg(:,4),[ones(size(bucketAvg')),bucketAvg']);

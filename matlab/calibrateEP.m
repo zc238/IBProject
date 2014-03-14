@@ -1,4 +1,7 @@
 function EPParams=calibrateEP(ticker1,ticker2,slope)
+ticker1='SPY';
+ticker2='SH';
+slope=-1;
 data1=readData(ticker1);
 data2=readData(ticker2);
 timeStamp1=data1(:,1);
@@ -25,17 +28,20 @@ cleanData(:,3)=midPrice2(index(:,2));
 
 B=zeros(n,1);
 f=mean(cleanData(:,3))/mean(cleanData(:,2));
-windowSize=1000*60*10;
-%cut off the beginning of the data, which has no valid B and residual
-%values
-startIndex=find(cleanData(:,1)>windowSize,1,'first');
+windowSize=1000*60*10; % 10min
 
+%cut off the beginning of the data, where no valid B and residual values
+startIndex=find(cleanData(:,1)>windowSize,1,'first');
+alpha=0.001;
+
+B(startIndex-1)=mean(cleanData(1:startIndex-1,3)-slope*f*cleanData(1:startIndex-1,2));
 for i=startIndex:n
-    localTime=cleanData(i,1);
-    index=find(cleanData(:,1)>(localTime-windowSize),1,'first');
-    pastMidPrice1=cleanData(index:i,2);
-    pastMidPrice2=cleanData(index:i,3);
-    B(i)=mean(pastMidPrice2-slope*f*pastMidPrice1);
+    %localTime=cleanData(i,1);
+    %index=find(cleanData(:,1)>(localTime-windowSize),1,'first');   
+    %pastMidPrice1=cleanData(index:i,2);
+    %pastMidPrice2=cleanData(index:i,3);
+    %B(i)=mean(pastMidPrice2-slope*f*pastMidPrice1);
+    B(i)=(1-alpha)*B(i-1)+alpha*(cleanData(i,3)-slope*f*cleanData(i,2));
 end
 
 residual=cleanData(:,3)-B-slope*f*cleanData(:,2);
@@ -61,20 +67,16 @@ for i=1:m
     %cut off the bottom of the data, which has not valid PnL change
     index=find(cleanData(:,1)<=cleanData(end,1)-10^(i+1),1,'last');
     PnL=PnL(startIndex:index);
+
     for j=1:numel(residualBucket)-1
         PnLBucketAve(j,i)=mean(PnL(and(residual(startIndex:index)>=residualBucket(j),residual(startIndex:index)<residualBucket(j+1))));
-        if (j==1) || (j==5) || (j==10)
-            %figure();
-            %hist(PnL(and(residual(startIndex:index)>=residualBucket(j),residual(startIndex:index)<residualBucket(j+1))),20);
-        end
     end
 end
 residualBucketAvg=(residualBucket(1:end-1)+residualBucket(2:end))/2;
-hist(residual(startIndex:end));
 figure();
 plot(residualBucketAvg,PnLBucketAve);
 title([strcat(ticker1,'-',ticker2) 'Expected Profit vs. Residual Value']);
 xlabel('Residual Value');
 ylabel('Expected Profit');
 legend('100ms','1s','10s','100s','Location','NorthEast');
-%EPParams=regress(profitBucketAvg',[ones(size(bucketAvg')),bucketAvg']);
+EPParams=regress(PnLBucketAve(:,4),[ones(size(residualBucketAvg')),residualBucketAvg']);
