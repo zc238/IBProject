@@ -146,7 +146,7 @@ public class TradeStrategy{
 		int tradeSizeX = tradeSize;
 		int tradeSizeY = (int) (tradeSize * scaling * Math.abs(slope));
 		
- 		double residual =  StrategyUtility.getLatestResidual(histQuotes.get(tickerX), histQuotes.get(tickerY), slope, this.oldBeta, true);
+ 		double residual =  0.0; //StrategyUtility.getLatestResidual(histQuotes.get(tickerX), histQuotes.get(tickerY), slope, this.oldBeta, true);
  		
  		System.out.println("Residual Computed: " + residual);
 

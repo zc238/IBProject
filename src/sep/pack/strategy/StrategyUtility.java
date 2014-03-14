@@ -26,28 +26,36 @@ public class StrategyUtility {
 		return l;
 	}
 	
-	public static double getLatestResidual(List<Quotes> xs, List<Quotes> ys, 
-										double slope, double oldBeta, boolean computeAgain){
-		if(computeAgain){//If we decide to recompute the residual using a new beta
-			DoubleArrayList avgTickXQ = convertQuoteToDList(xs);
-			DoubleArrayList avgTickYQ = convertQuoteToDList(ys);
-			
-			double meanY = Descriptive.mean(avgTickYQ);
-			double meanX = Descriptive.mean(avgTickXQ);
-			
-			double scaling = meanY / meanX;
-			DoubleArrayList resYs = new DoubleArrayList();
-//			System.out.println("QX Size: " + avgTickXQ.size());
-//			System.out.println("QY Size: " + avgTickYQ.size());
-			
-			for (int i=avgTickXQ.size()-1, j=avgTickYQ.size()-1; i>=0 && j>=0; --i,--j){
-				double y = avgTickYQ.get(j) - slope*avgTickXQ.get(i)*scaling;
-				resYs.add(y);
-			}
-//			System.out.println("SizeRes: " + resYs.size());
-			return resYs.get(resYs.size()-1) - Descriptive.mean(resYs);
-		}else{//else we use the old beta already computed from old quotes
-			return ys.get(ys.size()-1).getMidPrice() - oldBeta*xs.get(xs.size()-1).getMidPrice();
-		}
+	public static double getResidual(double beta, double sl, double y, double x){
+		return y-beta - sl*x;
+	}
+	
+	public static double computeBeta(Quotes x, Quotes y, double oldB, double alpha, double slope, double scaling){
+		double B = (1-alpha)*oldB + alpha*(y.getMidPrice() - slope*scaling*x.getMidPrice());
+		double res = y.getMidPrice() - B - x.getMidPrice()*scaling*slope;
+		return res;
+	}
+		
+	public static double computeScaling(List<Quotes> xs, List<Quotes> ys){
+		DoubleArrayList avgTickXQ = convertQuoteToDList(xs);
+		DoubleArrayList avgTickYQ = convertQuoteToDList(ys);
+		
+		double meanY = Descriptive.mean(avgTickYQ);
+		double meanX = Descriptive.mean(avgTickXQ);
+		
+		double scaling = meanY / meanX;
+		return scaling;
+	}
+	
+	public static double computeBeta(List<Quotes> xs, List<Quotes> ys, double slope, double scaling){
+		DoubleArrayList avgTickXQ = convertQuoteToDList(xs);
+		DoubleArrayList avgTickYQ = convertQuoteToDList(ys);
+		
+		double meanY = Descriptive.mean(avgTickYQ);
+		double meanX = Descriptive.mean(avgTickXQ);
+		
+		double B0 = meanY - slope*scaling * meanX;
+		double res0 = avgTickYQ.get(avgTickYQ.size()-1) - B0 - scaling*slope*avgTickXQ.get(avgTickXQ.size()-1);
+		return res0;
 	}
 }
