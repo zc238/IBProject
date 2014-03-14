@@ -72,7 +72,7 @@ public class MyDemo {
 			CubicTransCost transCost = Engine.parseTransCost(configFile);
 			ExpectedProfit expProfit = Engine.parseExpProfit(configFile);
 			final double windowSize = Engine.getWindowSize(configFile);
-			BackTestStrategy bts = new BackTestStrategy(transCost, expProfit, "SPY", "SH", windowSize, 1);
+			BackTestStrategy bts = new BackTestStrategy(transCost, expProfit, "SPY", "SH", windowSize, 100);
 			try{
 				bts.runSimulation();
 			}catch(Exception e){

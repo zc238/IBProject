@@ -143,10 +143,12 @@ public class BackTestStrategy {
 		long startMs = histQuotes.get(tickerX).get(0).getLocalTimeStamp().getTime();
 		qs.put(tickerX, new LinkedList<Quotes>());
 		qs.put(tickerY, new LinkedList<Quotes>());
-		for(Quotes q: histQuotes.get(tickerX)){
-			if ((q.getLocalTimeStamp().getTime()-startMs) < windowSize){
-				qs.get(tickerX).add(q);
-				qs.get(tickerY).add(q);
+		for(int i=0; i< histQuotes.get(tickerX).size(); ++i){
+			Quotes qX = histQuotes.get(tickerX).get(i);
+			Quotes qY = histQuotes.get(tickerY).get(i);
+			if ((qX.getLocalTimeStamp().getTime()-startMs) < windowSize){
+				qs.get(tickerX).add(qX);
+				qs.get(tickerY).add(qY);
 			}
 		}
 		return qs;
@@ -168,6 +170,8 @@ public class BackTestStrategy {
 		currentPositions.put(TICKER.SPY, 0);
 		currentPositions.put(TICKER.SH, 0);
 	}
+	
+	private DoubleArrayList allRes = new DoubleArrayList();
 	
 	public void runSimulation() throws IOException{
 		System.out.println("Running Simulation...");
@@ -196,20 +200,21 @@ public class BackTestStrategy {
 			double midPriceY = quotesY.getMidPrice();
 			double midPriceX = quotesX.getMidPrice();
 			
-			int tradeSizeX = tradeSize;
-			int tradeSizeY = (int) (tradeSize * scaling * Math.abs(slope));
+			int tradeSizeY = tradeSize;
+			int tradeSizeX = (int) (tradeSize * scaling * Math.abs(slope));
 			
 			double alpha = 0.001;
 	
 	 		oldBeta =  StrategyUtility.computeBeta(quotesX, quotesY, oldBeta, alpha, slope, scaling);
-	 		double residual = StrategyUtility.getResidual(oldBeta, scaling*slope, midPriceY, midPriceX);
+	 		double residual = StrategyUtility.getResidual(oldBeta, scaling*slope, midPriceX, midPriceY);
+	 		allRes.add(residual);
 	 		
 	 		System.out.println("Residual Computed: " + residual);
 	
 			Action action1 = null;
 			Action action2 = null;
 			
-			double expectedReturn = expProfit.getExpectedProf(new Pair<String>(tickerX, tickerY), residual);
+			double expectedReturn = tradeSize * expProfit.getExpectedProf(new Pair<String>(tickerX, tickerY), residual);
 			
 			System.out.println("Expected Profit Computed: " + expectedReturn);
 			System.out.println("Position for " + tickerX + " is " + currentPositions.get(tickerX));
@@ -296,5 +301,8 @@ public class BackTestStrategy {
 			System.out.println("Your PNL is at: " + pnl + ", Total Trade Made: " + tradePairNum);
 			System.out.println("Iteration: " + i + "/" + histQuotes.get(tickerX).size());
 		}
+		double m = Descriptive.mean(allRes);
+		double std = Math.sqrt(Descriptive.sampleVariance(allRes, m));
+		System.out.println("Mean: " + m + "; Std Error: " + std + "; MAX: " + Descriptive.max(allRes));
 	}
 }

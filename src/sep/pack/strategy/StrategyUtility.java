@@ -26,14 +26,15 @@ public class StrategyUtility {
 		return l;
 	}
 	
-	public static double getResidual(double beta, double sl, double y, double x){
-		return y-beta - sl*x;
+	public static double getResidual(double beta, double sl, double x, double y){
+		return y - beta - sl*x;
 	}
 	
 	public static double computeBeta(Quotes x, Quotes y, double oldB, double alpha, double slope, double scaling){
 		double B = (1-alpha)*oldB + alpha*(y.getMidPrice() - slope*scaling*x.getMidPrice());
-		double res = y.getMidPrice() - B - x.getMidPrice()*scaling*slope;
-		return res;
+		return B;
+//		double res = y.getMidPrice() - B - x.getMidPrice()*scaling*slope;
+//		return res;
 	}
 		
 	public static double computeScaling(List<Quotes> xs, List<Quotes> ys){
@@ -55,7 +56,8 @@ public class StrategyUtility {
 		double meanX = Descriptive.mean(avgTickXQ);
 		
 		double B0 = meanY - slope*scaling * meanX;
-		double res0 = avgTickYQ.get(avgTickYQ.size()-1) - B0 - scaling*slope*avgTickXQ.get(avgTickXQ.size()-1);
-		return res0;
+		return B0;
+//		double res0 = avgTickYQ.get(avgTickYQ.size()-1) - B0 - scaling*slope*avgTickXQ.get(avgTickXQ.size()-1);
+//		return res0;
 	}
 }
