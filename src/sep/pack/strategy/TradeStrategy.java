@@ -45,8 +45,6 @@ public class TradeStrategy{
 		startMs = Calendar.getInstance().getTimeInMillis();
 	}
 	
-	
-	
 	private Map<String, List<Quotes>> getAndTrimHistoricalQuotes(String tickerX, String tickerY, double windowSizeMs, 
 																				Quotes latestQuotesX, Quotes latestQuotesY) throws InterruptedException{
 		ConcurrentHashMap<String, List<Quotes>> histQuotes = marketdata.getStoredData();
@@ -54,18 +52,18 @@ public class TradeStrategy{
 				|| histQuotes.get(tickerY).size() < ABS_QUOTES_MIN
 				|| histQuotes.get(tickerX).size() < ABS_QUOTES_MIN
 				|| (Calendar.getInstance().getTimeInMillis()-startMs) < windowSize){ //wait for more quotes, time window not reached
-			histQuotes = marketdata.getStoredData();
-			
-			System.out.println("Need to wait at least " + windowSize + " miliseconds.");
-			System.out.println("Need to obtain at least " + ABS_QUOTES_MIN + " quotes data points for each ticker. ");
-			
-			if (histQuotes.get(tickerY) != null){
-				System.out.println("TICKER " + tickerY + ": SIZE: " + histQuotes.get(tickerY).size());
-			}
-			if (histQuotes.get(tickerX) != null){
-				System.out.println("TICKER " + tickerX + ": SIZE: " + histQuotes.get(tickerX).size());
-			}
-			Thread.sleep(10000);
+//			histQuotes = marketdata.getStoredData();
+//			
+//			System.out.println("Need to wait at least " + windowSize + " miliseconds.");
+//			System.out.println("Need to obtain at least " + ABS_QUOTES_MIN + " quotes data points for each ticker. ");
+//			
+//			if (histQuotes.get(tickerY) != null){
+//				System.out.println("TICKER " + tickerY + ": SIZE: " + histQuotes.get(tickerY).size());
+//			}
+//			if (histQuotes.get(tickerX) != null){
+//				System.out.println("TICKER " + tickerX + ": SIZE: " + histQuotes.get(tickerX).size());
+//			}
+//			Thread.sleep(10000);
 		}
 		StrategyUtility.removeQuotes(histQuotes.get(tickerY), latestQuotesY, windowSizeMs, latestQuotesY.getLocalTimeStamp().getTime());
 		StrategyUtility.removeQuotes(histQuotes.get(tickerX), latestQuotesX, windowSizeMs, latestQuotesX.getLocalTimeStamp().getTime());

@@ -4,13 +4,20 @@
 package sep.pack;
 
 import java.awt.FlowLayout;
+import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import sep.pack.data.Quotes;
+import sep.pack.strategy.BackTestStrategy;
+import sep.pack.strategy.CubicTransCost;
+import sep.pack.strategy.ExpectedProfit;
 import sep.pack.strategy.IBDelayCalibrator;
+import sep.pack.strategy.TransCost;
 import apidemo.util.HtmlButton;
 
 
@@ -58,6 +65,21 @@ public class MyDemo {
 			engine.shutDown();
 		}
 	};
+	HtmlButton b5 = new HtmlButton("Run BackTesting"){
+		@Override protected void actionPerformed() {
+			t3.selectAll();
+			String configFile = t3.getSelectedText();
+			CubicTransCost transCost = Engine.parseTransCost(configFile);
+			ExpectedProfit expProfit = Engine.parseExpProfit(configFile);
+			final double windowSize = Engine.getWindowSize(configFile);
+			BackTestStrategy bts = new BackTestStrategy(transCost, expProfit, "SPY", "SH", windowSize, 100);
+			try{
+				bts.runSimulation();
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	};
 	JTextField t1 = new JTextField(10);
 	JTextField t12 = new JTextField(2);
 	JTextField t2 = new JTextField(40);
@@ -80,6 +102,7 @@ public class MyDemo {
 		j3.add(t3);
 		j3.add(b3);
 		j3.add(b4);
+		j3.add(b5);
 		Frame1.add(j1);
 		Frame1.add(j2);
 		Frame1.add(j3);

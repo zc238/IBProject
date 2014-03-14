@@ -26,7 +26,7 @@ public class Engine {
 	private QuotesOrderProcessor processor = new QuotesOrderProcessor(handler, m_inLogger, m_inLogger, logger);
 	private QuotesOrderController controller = new QuotesOrderController(handler, processor, logger);
 	
-	private CubicTransCost parseTransCost(String paramPath){
+	public static CubicTransCost parseTransCost(String paramPath){
 		String line = "";
 		boolean findTransCost = false;
 		CubicTransCost transCost = new CubicTransCost();
@@ -67,7 +67,7 @@ public class Engine {
 		return transCost;
 	}
 	
-	private ExpectedProfit parseExpProfit(String paramPath){
+	public static ExpectedProfit parseExpProfit(String paramPath){
 		String line = "";
 		boolean findprofit = false;
 		ExpectedProfit profit = new ExpectedProfit();
@@ -105,7 +105,7 @@ public class Engine {
 		return profit;
 	}
 	
-	private double getWindowSize(String paramPath){
+	public static double getWindowSize(String paramPath){
 		String line = "";
 		boolean findWindowSize = false;
 		double windowSize = 10;
@@ -140,9 +140,9 @@ public class Engine {
 	
 	public void startStrategy(String paramPath){
 		// Obtain parameters
-		CubicTransCost transCost = parseTransCost(paramPath);
-		ExpectedProfit expProfit = parseExpProfit(paramPath);
-		final double windowSize = getWindowSize(paramPath);
+		CubicTransCost transCost = Engine.parseTransCost(paramPath);
+		ExpectedProfit expProfit = Engine.parseExpProfit(paramPath);
+		final double windowSize = Engine.getWindowSize(paramPath);
 		
 		// Retrieve Market Data
 		controller.makeconnection();

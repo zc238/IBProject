@@ -11,7 +11,7 @@ public class Quotes{
 	private int askSize;
 	private String ticker;
 	Date localTimeStamp;
-	private int reqId;
+	private int reqId = 0;
 	
 	public long getBidSize() {
 		return bidSize;
@@ -42,6 +42,15 @@ public class Quotes{
 		localTimeStamp = new Date();
 		reqId = a.reqId;
 		ticker = a.ticker;
+	}
+	
+	public Quotes(Date d, double b, double a, int bS, int aS, String tick){
+		bid = b;
+		ask = a;
+		bidSize = bS;
+		askSize = aS;
+		localTimeStamp = d;
+		ticker = tick;
 	}
 	
 	public Quotes(double b, double a, int bS, int aS, int id, String tick){
