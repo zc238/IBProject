@@ -4,11 +4,12 @@ leverage=[1,-1,2,-2,3,-3];
 TCParams=[];
 EPParams=[];
 
-for i=1:1
+for i=1:2
     figure();
     TC=calibrateTC(ticker(i));
     TCParams=[TCParams,TC(2)];
 end
+TCParams
 
 for i=1:1
     for j=i+1:2
@@ -18,5 +19,4 @@ for i=1:1
         EPParams=[EPParams,EP(2)];
     end
 end
-TCParams
 EPParams

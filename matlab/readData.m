@@ -1,8 +1,8 @@
 function data=readData(ticker)
 if strcmp(ticker,'SPY')
-    data=csvread('SPY.csv');
+    data=csvread('SPY_03-Mar-2014.csv');
 elseif strcmp(ticker,'SH')
-    data=csvread('SH.csv');
+    data=csvread('SH_03-Mar-2014.csv');
 elseif strcmp(ticker,'SSO')
     data=csvread('SSO.csv');
 elseif strcmp(ticker,'SDS')

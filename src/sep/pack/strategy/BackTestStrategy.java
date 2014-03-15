@@ -15,8 +15,6 @@ import java.util.StringTokenizer;
 import sep.pack.data.Pair;
 import sep.pack.data.Quotes;
 import sep.pack.data.TICKER;
-import cern.colt.list.DoubleArrayList;
-import cern.jet.stat.Descriptive;
 
 import com.ib.controller.Types.Action;
 
@@ -35,7 +33,6 @@ public class BackTestStrategy {
 	private Map<String, Integer> currentPositions = new HashMap<String, Integer>();
 	private double pnl = 0.0;
 	private int tradePairNum = 0;
-	private double oldBeta = 0.0;
 	
 	public BackTestStrategy(TransCost tc, ExpectedProfit profit, 
 			String tX, String tY, double wS, int tS){
@@ -154,155 +151,144 @@ public class BackTestStrategy {
 		return qs;
 	}
 	
-	private void addPos(String ticker, int amt, double executionPrice){
+	private void updatePosAndPnL(String ticker, int amt, double executionPrice){
 		int extAmt = currentPositions.get(ticker);
 		tradePairNum++;
 		this.currentPositions.put(ticker, amt+extAmt);
-		if (amt > 0){
-			pnl -= executionPrice * amt;
-		}else{
-			pnl += executionPrice * amt;
+		pnl -= executionPrice * amt;
+	}
+	
+	private Pair<Action> strategyDecision(Quotes quotesX, Quotes quotesY, int tradeSizeX, int tradeSizeY, 
+											double scaling, double slope, double alpha, 
+												double oldBeta, double threshold){
+		double orderImbaX = quotesX.getImbalance();
+		double orderImbaY = quotesY.getImbalance();
+		double midPriceX = quotesX.getMidPrice();
+		double midPriceY = quotesY.getMidPrice();
+		
+ 		double residual = StrategyUtility.getResidual(oldBeta, scaling*slope, midPriceX, midPriceY);		
+ 		System.out.println("Residual Computed: " + residual);
+		double expectedReturn = tradeSize * expProfit.getExpectedProf(new Pair<String>(tickerX, tickerY), residual);
+		System.out.println("Expected Profit Computed: " + expectedReturn);
+		
+		double transCostX = transCost.getTransCost(tickerX, orderImbaX);
+		double transCostY = transCost.getTransCost(tickerX, orderImbaY);
+		
+		double longX = tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCostX);
+		double shortX = tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCostX);
+		double longY = tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCostY);
+		double shortY = tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCostY);
+
+		Pair<Action> pair = null;
+		if (slope > 0){
+			double longXShortY = expectedReturn - (longX + shortY);
+			double shortXLongY = -expectedReturn - (shortX + longY);
+			if (longXShortY > threshold) {
+				pair = new Pair<Action>(Action.BUY, Action.SELL);
+			}
+			else if (shortXLongY > threshold){
+				pair = new Pair<Action>(Action.SELL, Action.BUY);
+			}
 		}
+		else if (slope < 0){
+			double longBoth = expectedReturn - (longX + longY);
+			double shortBoth = -expectedReturn - (shortX + shortY);
+			if (longBoth > threshold) {
+				pair = new Pair<Action>(Action.BUY, Action.BUY);
+			}
+			else if (shortBoth > threshold){
+				pair = new Pair<Action>(Action.SELL, Action.SELL);
+			}			
+		}
+		return pair;
+	}
+	
+	public void liquidation(Quotes quotesX, Quotes quotesY){
+		int liquidSizeX = currentPositions.get(tickerX);
+		int liquidSizeY = currentPositions.get(tickerY);
+		
+		if (liquidSizeX>0) {updatePosAndPnL(tickerX, -liquidSizeX, quotesX.getBid());}
+		else if (liquidSizeX<0) {updatePosAndPnL(tickerX, liquidSizeX, quotesX.getAsk());}
+		
+		if (liquidSizeY>0) {updatePosAndPnL(tickerY, -liquidSizeY, quotesY.getBid());}
+		else if (liquidSizeY<0) {updatePosAndPnL(tickerY, liquidSizeY, quotesY.getAsk());}
 	}
 	
 	public void kickOff() throws IOException{
-		parseHistQuotesFromFile(TICKER.SPY, TICKER.SH, "C:/Users/demon4000/Dropbox/data/SPY_03-Mar-2014.csv", "C:/Users/demon4000/Dropbox/data/SH_03-Mar-2014.csv");
+		parseHistQuotesFromFile(TICKER.SPY, TICKER.SH, "C:/Users/Long/Dropbox/PairTradingData/data/SPY_25-Feb-2014.csv", "C:/Users/Long/Dropbox/PairTradingData/data/SH_25-Feb-2014.csv");
+//		parseHistQuotesFromFile(TICKER.SPY, TICKER.SH, "C:/Users/demon4000/Dropbox/data/SPY_03-Mar-2014.csv", "C:/Users/demon4000/Dropbox/data/SH_03-Mar-2014.csv");
 		currentPositions.put(TICKER.SPY, 0);
 		currentPositions.put(TICKER.SH, 0);
 	}
-	
-	private DoubleArrayList allRes = new DoubleArrayList();
-	
+		
 	public void runSimulation() throws IOException{
 		System.out.println("Running Simulation...");
 		kickOff();
 		
 		double slope = (StrategyConstants.tickerLeverage.get(tickerY) + 0.0) / (StrategyConstants.tickerLeverage.get(tickerX) + 0.0);
-			
 		double threshold = 0;
-				
+		
 		Map<String, List<Quotes>> quotes = getBurnIn();
-		
 		System.out.println("Obtained Burnin Period...");
-		
 		double scaling = StrategyUtility.computeScaling(quotes.get(tickerX), quotes.get(tickerY));
-		oldBeta = StrategyUtility.computeBeta(quotes.get(tickerX), quotes.get(tickerY), slope, scaling);
+		double oldBeta = StrategyUtility.computeBeta(quotes.get(tickerX), quotes.get(tickerY), slope, scaling);
+
+		int tradeSizeX = (int) (tradeSize * scaling * Math.abs(slope));
+		int tradeSizeY = tradeSize;
+		int quotesSize = histQuotes.get(tickerX).size();
 		
 		System.out.println("X: " + histQuotes.get(tickerX).size());
 		System.out.println("Y: " + histQuotes.get(tickerY).size());
-		for (int i=quotes.get(tickerX).size(); i<histQuotes.get(tickerX).size(); ++i){
-			Quotes quotesY = histQuotes.get(tickerY).get(i);
-			Quotes quotesX = histQuotes.get(tickerX).get(i);
 		
-			double orderImbaY = quotesY.getImbalance();
-			double orderImbaX = quotesX.getImbalance();
-			
-			double midPriceY = quotesY.getMidPrice();
-			double midPriceX = quotesX.getMidPrice();
-			
-			int tradeSizeY = tradeSize;
-			int tradeSizeX = (int) (tradeSize * scaling * Math.abs(slope));
-			
+		for (int i=quotes.get(tickerX).size(); i<quotesSize; ++i){
+			Quotes quotesX = histQuotes.get(tickerX).get(i);
+			Quotes quotesY = histQuotes.get(tickerY).get(i);
+		
 			double alpha = 0.001;
-	
 	 		oldBeta =  StrategyUtility.computeBeta(quotesX, quotesY, oldBeta, alpha, slope, scaling);
-	 		double residual = StrategyUtility.getResidual(oldBeta, scaling*slope, midPriceX, midPriceY);
-	 		allRes.add(residual);
-	 		
-	 		System.out.println("Residual Computed: " + residual);
-	
-			Action action1 = null;
-			Action action2 = null;
-			
-			double expectedReturn = tradeSize * expProfit.getExpectedProf(new Pair<String>(tickerX, tickerY), residual);
-			
-			System.out.println("Expected Profit Computed: " + expectedReturn);
+					
 			System.out.println("Position for " + tickerX + " is " + currentPositions.get(tickerX));
 			System.out.println("Position for " + tickerY + " is " + currentPositions.get(tickerY));
-			
-			if (slope < 0){ // small residual: buy both; large residual: sell both;
-				// no position
-				if ((currentPositions.get(tickerY) == 0) && (currentPositions.get(tickerX) == 0)){
-					if ( expectedReturn > threshold 
-							+ tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCost.getTransCost(tickerX, orderImbaX)) 
-							+ tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCost.getTransCost(tickerY, orderImbaY))){
-						// buy both at ask
-						addPos(tickerX, tradeSizeX, quotesX.getAsk());
-						addPos(tickerY, tradeSizeY, quotesY.getAsk());
-					}
-					else if ( -expectedReturn > threshold 
-							+ tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCost.getTransCost(tickerX, orderImbaX)) 
-							+ tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCost.getTransCost(tickerY, orderImbaY))){
-						// sell both at bid
-						addPos(tickerX, -tradeSizeX, quotesX.getBid());
-						addPos(tickerY, -tradeSizeY, quotesY.getBid());
-					}
-				}
-				// long position, short only
-				else if ((currentPositions.get(tickerY) > 0) && (currentPositions.get(tickerX) > 0)){
-					if ( -expectedReturn > threshold 
-							+ tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCost.getTransCost(tickerX, orderImbaX)) 
-							+ tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCost.getTransCost(tickerY, orderImbaY))){
-						// sell at both bid
-						addPos(tickerX, -tradeSizeX, quotesX.getBid());
-						addPos(tickerY, -tradeSizeY, quotesX.getBid());
-					}		
-				}
-				// short position, long only
-				else if ((currentPositions.get(tickerY) < 0) && (currentPositions.get(tickerX) < 0)){
-					if ( expectedReturn > threshold 
-							+ tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCost.getTransCost(tickerX, orderImbaX)) 
-							+ tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCost.getTransCost(tickerY, orderImbaY))){
-						// buy at both ask
-						addPos(tickerX, tradeSizeX, quotesX.getAsk());
-						addPos(tickerY, tradeSizeY, quotesY.getAsk());
-					}
-				}
-			}
-			else if (slope > 0){ // small residual: buy ticker1 and sell ticker2; large residual: sell ticker1 and buy ticker2;
-				// no position
-				if ((currentPositions.get(tickerY) == 0) && (currentPositions.get(tickerX) == 0)){
-					if ( expectedReturn > threshold 
-							+ tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCost.getTransCost(tickerY, orderImbaY)) 
-							+ tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCost.getTransCost(tickerX, orderImbaX))){
-						// buy ticker1 at ask; sell ticker2 at bid
-						addPos(tickerX, tradeSizeX, quotesX.getAsk());
-						addPos(tickerY, -tradeSizeY, quotesX.getBid());
-					}
-					else if ( -expectedReturn > threshold 
-							+ tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCost.getTransCost(tickerY, orderImbaY)) 
-							+ tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCost.getTransCost(tickerX, orderImbaX))){
-						// sell ticker1 at bid; buy ticker2 at ask
-						addPos(tickerX, -tradeSizeX, quotesX.getBid());
-						addPos(tickerY, tradeSizeY, quotesY.getAsk());
-					}
-				}
-				// ticker1 long position, sell ticker1 and buy ticker2 only
-				else if ((currentPositions.get(tickerY) > 0) && (currentPositions.get(tickerX) < 0)){
-					if ( -expectedReturn > threshold 
-							+ tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCost.getTransCost(tickerY, orderImbaY)) 
-							+ tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCost.getTransCost(tickerX, orderImbaX))){
-						// sell ticker1 at bid; buy ticker2 at ask
-						addPos(tickerX, -tradeSizeX, quotesX.getBid());
-						addPos(tickerY, tradeSizeY, quotesY.getAsk());
-					}		
-				}
-				// ticker1 short position, buy ticker1 and sell ticker2 only
-				else if ((currentPositions.get(tickerY) < 0) && (currentPositions.get(tickerX) < 0)){
-					if (expectedReturn > threshold 
-							+ tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCost.getTransCost(tickerY, orderImbaY)) 
-							+ tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCost.getTransCost(tickerX, orderImbaX))){
-						// buy ticker1 at ask; sell ticker2 at bid
-						addPos(tickerX, tradeSizeX, quotesX.getAsk());
-						addPos(tickerY, -tradeSizeY, quotesY.getBid());
-					}
-				}
-			}//end elseif
 			System.out.println("Your PNL is at: " + pnl + ", Total Trade Made: " + tradePairNum);
 			System.out.println("Iteration: " + i + "/" + histQuotes.get(tickerX).size());
+			
+			Pair<Action> decision = strategyDecision(quotesX, quotesY, tradeSizeX, tradeSizeY, scaling, slope, alpha, oldBeta, threshold);
+			if (decision == null) {continue;}
+			
+			if (decision.getA() == Action.BUY){
+				if ((decision.getB() == Action.BUY) 
+					&& (currentPositions.get(tickerY) <= 0) 
+					&& (currentPositions.get(tickerX) <= 0)){
+					updatePosAndPnL(tickerX, tradeSizeX, quotesX.getAsk());
+					updatePosAndPnL(tickerY, tradeSizeY, quotesY.getAsk());
+				}
+				else if ((decision.getB() == Action.SELL) 
+					&& (currentPositions.get(tickerY) <= 0) 
+					&& (currentPositions.get(tickerX) >= 0)){
+					updatePosAndPnL(tickerX, tradeSizeX, quotesX.getAsk());
+					updatePosAndPnL(tickerY, -tradeSizeY, quotesY.getBid());
+				}
+			}
+			else if (decision.getA() == Action.SELL){
+				if ((decision.getB() == Action.BUY)
+					&& (currentPositions.get(tickerY) >= 0) 
+					&& (currentPositions.get(tickerX) <= 0)){
+					updatePosAndPnL(tickerX, -tradeSizeX, quotesX.getBid());
+					updatePosAndPnL(tickerY, tradeSizeY, quotesY.getAsk());
+				}
+				else if ((decision.getB() == Action.SELL)
+					&& (currentPositions.get(tickerY) <= 0) 
+					&& (currentPositions.get(tickerX) <= 0)){
+					updatePosAndPnL(tickerX, -tradeSizeX, quotesX.getBid());
+					updatePosAndPnL(tickerY, -tradeSizeY, quotesY.getBid());
+				}
+			}
+			
 		}
-		double m = Descriptive.mean(allRes);
-		double std = Math.sqrt(Descriptive.sampleVariance(allRes, m));
-		System.out.println("Mean: " + m + "; Std Error: " + std + "; MAX: " + Descriptive.max(allRes));
+		Quotes quotesX = histQuotes.get(tickerX).get(quotesSize-1);
+		Quotes quotesY = histQuotes.get(tickerY).get(quotesSize-1);
+		liquidation(quotesX,quotesY);
+
+		System.out.println("Your Final PNL is at: " + pnl + ", Total Trade Made: " + tradePairNum);
 	}
 }
