@@ -143,6 +143,7 @@ public class Engine {
 		CubicTransCost transCost = Engine.parseTransCost(paramPath);
 		ExpectedProfit expProfit = Engine.parseExpProfit(paramPath);
 		final double windowSize = Engine.getWindowSize(paramPath);
+		double threshold = 0.0;
 		
 		// Retrieve Market Data
 		controller.makeconnection();
@@ -152,7 +153,7 @@ public class Engine {
 		controller.reqPositions(false);
 		
 		// Start Automated Trading Strategy
-	
+		
 		for (int i=0; i<TICKER.TICKERS.size(); ++i){
 			for (int j=i; j<TICKER.TICKERS.size(); ++j){
 				int tradeSize = 100;
@@ -160,7 +161,7 @@ public class Engine {
 				if(i==j){ continue; }
 				//This is necessary because you want different strategy pairs to independently perform, so one strategy blocking does not stop the process
 				Runnable task = new TradeStrategyTask(new TradeStrategy(logger, transCost, expProfit, 
-														TICKER.TICKERS.get(i), TICKER.TICKERS.get(j), windowSize, tradeSize), controller);
+														TICKER.TICKERS.get(i), TICKER.TICKERS.get(j), windowSize, tradeSize, threshold), controller);
 				Thread t = new Thread(task);
 				t.start();
 			}

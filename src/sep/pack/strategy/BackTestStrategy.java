@@ -18,15 +18,7 @@ import sep.pack.data.TICKER;
 
 import com.ib.controller.Types.Action;
 
-public class BackTestStrategy {
-	
-	private TransCost transCost;
-	private ExpectedProfit expProfit;
-	
-	private String tickerX;
-	private String tickerY;
-	private double windowSize;
-	private int tradeSize;
+public class BackTestStrategy extends AbstractStrategy{
 
 	private Map<String, List<Quotes>> histQuotes = new HashMap<String, List<Quotes>>();
 	
@@ -135,7 +127,8 @@ public class BackTestStrategy {
 		System.out.println("Finish Parsing Historical Quotes");
 	}
 	
-	private Map<String, List<Quotes>> getBurnIn(){
+	@Override
+	protected Map<String, List<Quotes>> getBurnIn(){
 		Map<String, List<Quotes>> qs = new HashMap<String, List<Quotes>>();
 		long startMs = histQuotes.get(tickerX).get(0).getLocalTimeStamp().getTime();
 		qs.put(tickerX, new LinkedList<Quotes>());
@@ -158,51 +151,6 @@ public class BackTestStrategy {
 		pnl -= executionPrice * amt;
 	}
 	
-	private Pair<Action> strategyDecision(Quotes quotesX, Quotes quotesY, int tradeSizeX, int tradeSizeY, 
-											double scaling, double slope, double alpha, 
-												double oldBeta, double threshold){
-		double orderImbaX = quotesX.getImbalance();
-		double orderImbaY = quotesY.getImbalance();
-		double midPriceX = quotesX.getMidPrice();
-		double midPriceY = quotesY.getMidPrice();
-		
- 		double residual = StrategyUtility.getResidual(oldBeta, scaling*slope, midPriceX, midPriceY);		
- 		System.out.println("Residual Computed: " + residual);
-		double expectedReturn = tradeSize * expProfit.getExpectedProf(new Pair<String>(tickerX, tickerY), residual);
-		System.out.println("Expected Profit Computed: " + expectedReturn);
-		
-		double transCostX = transCost.getTransCost(tickerX, orderImbaX);
-		double transCostY = transCost.getTransCost(tickerX, orderImbaY);
-		
-		double longX = tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCostX);
-		double shortX = tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCostX);
-		double longY = tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCostY);
-		double shortY = tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCostY);
-
-		Pair<Action> pair = null;
-		if (slope > 0){
-			double longXShortY = expectedReturn - (longX + shortY);
-			double shortXLongY = -expectedReturn - (shortX + longY);
-			if (longXShortY > threshold) {
-				pair = new Pair<Action>(Action.BUY, Action.SELL);
-			}
-			else if (shortXLongY > threshold){
-				pair = new Pair<Action>(Action.SELL, Action.BUY);
-			}
-		}
-		else if (slope < 0){
-			double longBoth = expectedReturn - (longX + longY);
-			double shortBoth = -expectedReturn - (shortX + shortY);
-			if (longBoth > threshold) {
-				pair = new Pair<Action>(Action.BUY, Action.BUY);
-			}
-			else if (shortBoth > threshold){
-				pair = new Pair<Action>(Action.SELL, Action.SELL);
-			}			
-		}
-		return pair;
-	}
-	
 	public void liquidation(Quotes quotesX, Quotes quotesY){
 		int liquidSizeX = currentPositions.get(tickerX);
 		int liquidSizeY = currentPositions.get(tickerY);
@@ -215,8 +163,8 @@ public class BackTestStrategy {
 	}
 	
 	public void kickOff() throws IOException{
-		parseHistQuotesFromFile(TICKER.SPY, TICKER.SH, "C:/Users/Long/Dropbox/PairTradingData/data/SPY_25-Feb-2014.csv", "C:/Users/Long/Dropbox/PairTradingData/data/SH_25-Feb-2014.csv");
-//		parseHistQuotesFromFile(TICKER.SPY, TICKER.SH, "C:/Users/demon4000/Dropbox/data/SPY_03-Mar-2014.csv", "C:/Users/demon4000/Dropbox/data/SH_03-Mar-2014.csv");
+//		parseHistQuotesFromFile(TICKER.SPY, TICKER.SH, "C:/Users/Long/Dropbox/PairTradingData/data/SPY_25-Feb-2014.csv", "C:/Users/Long/Dropbox/PairTradingData/data/SH_25-Feb-2014.csv");
+		parseHistQuotesFromFile(TICKER.SPY, TICKER.SH, "C:/Users/demon4000/Dropbox/data/SPY_03-Mar-2014.csv", "C:/Users/demon4000/Dropbox/data/SH_03-Mar-2014.csv");
 		currentPositions.put(TICKER.SPY, 0);
 		currentPositions.put(TICKER.SH, 0);
 	}
@@ -224,27 +172,19 @@ public class BackTestStrategy {
 	public void runSimulation() throws IOException{
 		System.out.println("Running Simulation...");
 		kickOff();
-		
-		double slope = (StrategyConstants.tickerLeverage.get(tickerY) + 0.0) / (StrategyConstants.tickerLeverage.get(tickerX) + 0.0);
-		double threshold = 0;
-		
-		Map<String, List<Quotes>> quotes = getBurnIn();
-		System.out.println("Obtained Burnin Period...");
-		double scaling = StrategyUtility.computeScaling(quotes.get(tickerX), quotes.get(tickerY));
-		double oldBeta = StrategyUtility.computeBeta(quotes.get(tickerX), quotes.get(tickerY), slope, scaling);
 
-		int tradeSizeX = (int) (tradeSize * scaling * Math.abs(slope));
-		int tradeSizeY = tradeSize;
+		int burninSize = computeAllFirstIntParams();
+		System.out.println("Obtained Burnin Period...");
+
 		int quotesSize = histQuotes.get(tickerX).size();
 		
 		System.out.println("X: " + histQuotes.get(tickerX).size());
 		System.out.println("Y: " + histQuotes.get(tickerY).size());
 		
-		for (int i=quotes.get(tickerX).size(); i<quotesSize; ++i){
+		for (int i=burninSize; i<quotesSize; ++i){
 			Quotes quotesX = histQuotes.get(tickerX).get(i);
 			Quotes quotesY = histQuotes.get(tickerY).get(i);
 		
-			double alpha = 0.001;
 	 		oldBeta =  StrategyUtility.computeBeta(quotesX, quotesY, oldBeta, alpha, slope, scaling);
 					
 			System.out.println("Position for " + tickerX + " is " + currentPositions.get(tickerX));
@@ -252,7 +192,8 @@ public class BackTestStrategy {
 			System.out.println("Your PNL is at: " + pnl + ", Total Trade Made: " + tradePairNum);
 			System.out.println("Iteration: " + i + "/" + histQuotes.get(tickerX).size());
 			
-			Pair<Action> decision = strategyDecision(quotesX, quotesY, tradeSizeX, tradeSizeY, scaling, slope, alpha, oldBeta, threshold);
+			Pair<Action> decision = strategyDecision(quotesX, quotesY);
+			
 			if (decision == null) {continue;}
 			
 			if (decision.getA() == Action.BUY){

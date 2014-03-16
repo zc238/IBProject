@@ -11,30 +11,22 @@ import sep.pack.QuotesOrderLogger;
 import sep.pack.data.Pair;
 import sep.pack.data.Quotes;
 import sep.pack.support.OrderUtility;
-import cern.colt.list.DoubleArrayList;
-import cern.jet.stat.Descriptive;
 
 import com.ib.controller.Types.Action;
 
-public class TradeStrategy{
+public class TradeStrategy extends AbstractStrategy{
 	
 	private QuotesOrderLogger marketdata;
-	private TransCost transCost;
-	private ExpectedProfit expProfit;
-	
-	private String tickerX;
-	private String tickerY;
+
 	private double windowSize;
-	private int tradeSize;
-	private long startMs;
-	
-	private double oldBeta = 0.0;
-	private double meanX = 0.0;
-	private double meanY = 0.0;
+	private long startMs;	
 	private final int ABS_QUOTES_MIN = 10;
+	private boolean isBurninSet = false;
+
 	
 	public TradeStrategy(QuotesOrderLogger md, TransCost tc, 
-							ExpectedProfit profit, String tX, String tY, double wS, int tS){
+							ExpectedProfit profit, String tX, String tY, 
+								double wS, int tS, double thres){
 		marketdata = md;
 		transCost = tc;
 		expProfit = profit;
@@ -43,10 +35,11 @@ public class TradeStrategy{
 		windowSize = wS*1000*60; //wS is in minute, windowSize in milisecond
 		tradeSize = tS;
 		startMs = Calendar.getInstance().getTimeInMillis();
+		threshold = thres;
 	}
 	
-	private Map<String, List<Quotes>> getAndTrimHistoricalQuotes(String tickerX, String tickerY, double windowSizeMs, 
-																				Quotes latestQuotesX, Quotes latestQuotesY) throws InterruptedException{
+	@Override
+	protected Map<String, List<Quotes>> getBurnIn(){
 		ConcurrentHashMap<String, List<Quotes>> histQuotes = marketdata.getStoredData();
 		while (histQuotes.get(tickerY)==null || histQuotes.get(tickerX)==null 
 				|| histQuotes.get(tickerY).size() < ABS_QUOTES_MIN
@@ -65,180 +58,64 @@ public class TradeStrategy{
 //			}
 //			Thread.sleep(10000);
 		}
-		StrategyUtility.removeQuotes(histQuotes.get(tickerY), latestQuotesY, windowSizeMs, latestQuotesY.getLocalTimeStamp().getTime());
-		StrategyUtility.removeQuotes(histQuotes.get(tickerX), latestQuotesX, windowSizeMs, latestQuotesX.getLocalTimeStamp().getTime());
+//		StrategyUtility.removeQuotes(histQuotes.get(tickerY), latestQuotesY, windowSizeMs, latestQuotesY.getLocalTimeStamp().getTime());
+//		StrategyUtility.removeQuotes(histQuotes.get(tickerX), latestQuotesX, windowSizeMs, latestQuotesX.getLocalTimeStamp().getTime());
 
 		return histQuotes;
 	}
 	
-	private String getTradeInfo(String ticker, int pos, Quotes quotes, Action act, double transCost){
-		StringBuilder sb = new StringBuilder();
-		sb.append("[TRADE]: ");
-		sb.append(act.name());
-		sb.append(" " + ticker);
-		sb.append(" [Bid: ]");
-		sb.append(quotes.getBid());
-		sb.append("(" + quotes.getBidSize() + ")");
-		sb.append(" [Ask: ]");
-		sb.append(quotes.getAsk());
-		sb.append("(" + quotes.getAskSize() + ")");
-		sb.append(" [Imbalance: ]");
-		sb.append(quotes.getImbalance());
-		sb.append(" [Transaction Cost]: ");
-		sb.append(transCost);
-		sb.append(" [Existing Position]: ");
-		sb.append(pos);
-		return sb.toString();
-	}
+//	private String getTradeInfo(String ticker, int pos, Quotes quotes, Action act, double transCost){
+//		StringBuilder sb = new StringBuilder();
+//		sb.append("[TRADE]: ");
+//		sb.append(act.name());
+//		sb.append(" " + ticker);
+//		sb.append(" [Bid: ]");
+//		sb.append(quotes.getBid());
+//		sb.append("(" + quotes.getBidSize() + ")");
+//		sb.append(" [Ask: ]");
+//		sb.append(quotes.getAsk());
+//		sb.append("(" + quotes.getAskSize() + ")");
+//		sb.append(" [Imbalance: ]");
+//		sb.append(quotes.getImbalance());
+//		sb.append(" [Transaction Cost]: ");
+//		sb.append(transCost);
+//		sb.append(" [Existing Position]: ");
+//		sb.append(pos);
+//		return sb.toString();
+//	}
 	
-	private String getTradeRationale(String tickerX, String tickerY, 
-										int posX, int posY, 
-											Quotes quotesX, Quotes quotesY, 
-												Action actX, Action actY,
-													double residual, double exProfit,
-														double transCostX, double transCostY){
-		StringBuilder sb = new StringBuilder();
-		sb.append(getTradeInfo(tickerX, posX, quotesX, actX, transCostX) + "\n");
-		sb.append(getTradeInfo(tickerY, posY, quotesY, actY, transCostY));
-		sb.append("\n[Expected Profit]: ");
-		sb.append(exProfit);
-		sb.append(" [Residual]: ");
-		sb.append(residual);
-		return sb.toString();
-	}
+//	private String getTradeRationale(Quotes quotesX, Quotes quotesY, 
+//												Action actX, Action actY,
+//													double residual, double exProfit,
+//														double transCostX, double transCostY){
+//		StringBuilder sb = new StringBuilder();
+//		sb.append(getTradeInfo(tickerX, tradeSizeX, quotesX, actX, transCostX) + "\n");
+//		sb.append(getTradeInfo(tickerY, tradeSizeY, quotesY, actY, transCostY));
+//		sb.append("\n[Expected Profit]: ");
+//		sb.append(exProfit);
+//		sb.append(" [Residual]: ");
+//		sb.append(residual);
+//		return sb.toString();
+//	}
 	
 	//TODO, must think about unfilled positions (marketdata.getUnfilledPosition()); 
 	public List<OrderContractContainer> getOrdersFromHistQuotes() throws InterruptedException{
 		System.out.println("Running Strategy...");
-
-		double slope = (StrategyConstants.tickerLeverage.get(tickerY) + 0.0) / (StrategyConstants.tickerLeverage.get(tickerX) + 0.0);
-			
-		double threshold = 0;
+		
+		if (!this.isBurninSet){
+			computeAllFirstIntParams();
+			isBurninSet = true;
+			return null;
+		}
+		
 		Quotes quotesY = marketdata.getLatestNbbo(tickerY);
 		Quotes quotesX = marketdata.getLatestNbbo(tickerX);
+		Pair<Action> decision = strategyDecision(quotesX, quotesY);
 		
-		Map<String, List<Quotes>> histQuotes = getAndTrimHistoricalQuotes(tickerX, tickerY, windowSize, quotesX, quotesY);
-		
-		double orderImbaY = quotesY.getImbalance();
-		double orderImbaX = quotesX.getImbalance();
-		
-		double midPriceY = quotesY.getMidPrice();
-		double midPriceX = quotesX.getMidPrice();
-		
-		// Current Window
-		DoubleArrayList avgTickYQ = StrategyUtility.convertQuoteToDList(histQuotes.get(tickerY));
-		DoubleArrayList avgTickXQ = StrategyUtility.convertQuoteToDList(histQuotes.get(tickerX));
-		
-		double alpha = 1 - 1 / windowSize;
-		if (meanY == 0.0){
-			meanY = Descriptive.mean(avgTickYQ);
-		}else{
-			meanY = alpha * meanY + (1 - alpha) * midPriceY;
-		}
-		if (meanX == 0.0){
-			meanX = Descriptive.mean(avgTickXQ);
-		}else{
-			meanX = alpha * meanX + (1 - alpha) * midPriceX;
-		}
-		
-		double scaling = Descriptive.mean(avgTickYQ) / Descriptive.mean(avgTickXQ);
-		
-		int tradeSizeX = tradeSize;
-		int tradeSizeY = (int) (tradeSize * scaling * Math.abs(slope));
-		
- 		double residual =  0.0; //StrategyUtility.getLatestResidual(histQuotes.get(tickerX), histQuotes.get(tickerY), slope, this.oldBeta, true);
- 		
- 		System.out.println("Residual Computed: " + residual);
-
-		Action action1 = null;
-		Action action2 = null;
-		
-		double expectedReturn = expProfit.getExpectedProf(new Pair<String>(tickerX, tickerY), residual);
-		
-		System.out.println("Expected Profit Computed: " + expectedReturn);
-		System.out.println("Position for " + tickerX + " is " + marketdata.getPosition(tickerX));
-		System.out.println("Position for " + tickerY + " is " + marketdata.getPosition(tickerY));
-		
-		int xPosition = marketdata.getPosition(tickerX);
-		int yPosition = marketdata.getPosition(tickerY);
-		double transCostX = transCost.getTransCost(tickerX, orderImbaX);
-		double transCostY = transCost.getTransCost(tickerY, orderImbaY);
-		
-		if (slope < 0){ // small residual: buy both; large residual: sell both;
-			// no position
-			if (xPosition == 0 && yPosition == 0){
-				if ( expectedReturn > threshold 
-						+ tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCostY) 
-						+ tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCostX)){
-					// buy both at ask
-					action1 = Action.BUY; action2 = Action.BUY;
-				}
-				else if ( -expectedReturn > threshold 
-						+ tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCostY) 
-						+ tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCostX)){
-					// sell both at bid
-					action1 = Action.SELL; action2 = Action.SELL;					
-				}
-			}
-			// long position, short only
-			else if (xPosition > 0 && yPosition > 0){
-				if ( -expectedReturn > threshold 
-						+ tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCostY) 
-						+ tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCostX)){
-					// sell at both bid
-					action1 = Action.SELL; action2 = Action.SELL;					
-				}		
-			}
-			// short position, long only
-			else if (xPosition < 0 && yPosition < 0){
-				if ( expectedReturn > threshold 
-						+ tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCostY) 
-						+ tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCostX)){
-					// buy at both ask
-					action1 = Action.BUY; action2 = Action.BUY;
-				}
-			}
-		}
-		else if (slope > 0){ // small residual: buy ticker1 and sell ticker2; large residual: sell ticker1 and buy ticker2;
-			// no position
-			if (xPosition == 0 && yPosition == 0){
-				if ( expectedReturn > threshold 
-						+ tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCostY) 
-						+ tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCostX)){
-					// buy ticker1 at ask; sell ticker2 at bid
-					action1 = Action.BUY; action2 = Action.SELL;
-				}
-				else if ( -expectedReturn > threshold 
-						+ tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCostY) 
-						+ tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCostX)){
-					// sell ticker1 at bid; buy ticker2 at ask
-					action1 = Action.SELL; action2 = Action.BUY;					
-				}
-			}
-			// ticker1 long position, sell ticker1 and buy ticker2 only
-			else if (xPosition < 0 && yPosition > 0){
-				if ( -expectedReturn > threshold 
-						+ tradeSizeX * (StrategyConstants.IB_TRANS_COST - quotesY.getBid() + midPriceY + transCostY) 
-						+ tradeSizeY * (StrategyConstants.IB_TRANS_COST + quotesX.getAsk() - midPriceX - transCostX)){
-					// sell ticker1 at bid; buy ticker2 at ask
-					action1 = Action.SELL; action2 = Action.BUY;
-				}		
-			}
-			// ticker1 short position, buy ticker1 and sell ticker2 only
-			else if (xPosition < 0 && yPosition < 0){
-				if (expectedReturn > threshold 
-						+ tradeSizeX * (StrategyConstants.IB_TRANS_COST + quotesY.getAsk() - midPriceY - transCostY) 
-						+ tradeSizeY * (StrategyConstants.IB_TRANS_COST - quotesX.getBid() + midPriceX + transCostX)){
-					// buy ticker1 at ask; sell ticker2 at bid
-					action1 = Action.BUY; action2 = Action.SELL;
-				}
-			}
-		}//end elseif
-		
-		if (action1 != null && action2 != null){
-			System.out.println(getTradeRationale(tickerX, tickerY, xPosition, yPosition, quotesX, quotesY, action1, action2, residual, expectedReturn, transCostX, transCostY));
-		}
-		return getOrderFromIntel(tickerY, tickerX, Math.abs(tradeSizeX), Math.abs(tradeSizeY), action1, action2);
+//		if (decision.getA() != null && decision.getB()!= null){
+//			System.out.println(getTradeRationale(quotesX, quotesY, action1, action2, residual, expectedReturn, transCostX, transCostY));
+//		}
+		return getOrderFromIntel(tickerY, tickerX, Math.abs(tradeSizeX), Math.abs(tradeSizeY), decision.getA(), decision.getB());
 	}
 	
 	private List<OrderContractContainer> getOrderFromIntel(String ticker1, String ticker2,

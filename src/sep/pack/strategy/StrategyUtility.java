@@ -33,10 +33,8 @@ public class StrategyUtility {
 	public static double computeBeta(Quotes x, Quotes y, double oldB, double alpha, double slope, double scaling){
 		double B = (1-alpha)*oldB + alpha*(y.getMidPrice() - slope*scaling*x.getMidPrice());
 		return B;
-//		double res = y.getMidPrice() - B - x.getMidPrice()*scaling*slope;
-//		return res;
 	}
-		
+	
 	public static double computeScaling(List<Quotes> xs, List<Quotes> ys){
 		DoubleArrayList avgTickXQ = convertQuoteToDList(xs);
 		DoubleArrayList avgTickYQ = convertQuoteToDList(ys);
@@ -57,7 +55,5 @@ public class StrategyUtility {
 		
 		double B0 = meanY - slope*scaling * meanX;
 		return B0;
-//		double res0 = avgTickYQ.get(avgTickYQ.size()-1) - B0 - scaling*slope*avgTickXQ.get(avgTickXQ.size()-1);
-//		return res0;
 	}
 }
