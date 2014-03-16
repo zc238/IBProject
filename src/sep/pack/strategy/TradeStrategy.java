@@ -58,8 +58,6 @@ public class TradeStrategy extends AbstractStrategy{
 //			}
 //			Thread.sleep(10000);
 		}
-//		StrategyUtility.removeQuotes(histQuotes.get(tickerY), latestQuotesY, windowSizeMs, latestQuotesY.getLocalTimeStamp().getTime());
-//		StrategyUtility.removeQuotes(histQuotes.get(tickerX), latestQuotesX, windowSizeMs, latestQuotesX.getLocalTimeStamp().getTime());
 
 		return histQuotes;
 	}

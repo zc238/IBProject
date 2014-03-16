@@ -15,8 +15,10 @@ public class TICKER {
 		private static final long serialVersionUID = 1L;
 	{
 		add(TICKER.SPY);
-		add(TICKER.SSO); 
+//		add(TICKER.SSO); 
 //		add(TICKER.SDS); 
-//		add(TICKER.UPR); add(TICKER.SPX); add(TICKER.SH); 
+//		add(TICKER.UPR); 
+//		add(TICKER.SPX); 
+		add(TICKER.SH); 
 	}};
 }
